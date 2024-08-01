@@ -1,36 +1,42 @@
 use crate::core::{
-    config::{load_config, Config},
-    types::{FieldId, Room},
+    config::load_config,
+    types::{FieldId, GameResult, Room},
 };
 
-use crate::repositories::{traits::GameRepositoryInterface, InMemoryGameRepository};
+use crate::repositories::traits::GameRepositoryInterface;
 
-use super::{traits::VisualizeGame, GameVisualizeService};
+use super::{
+    traits::{GameServiceInterface, VisualizeGame},
+    GameService, GameVisualizeService,
+};
 
 pub struct GamePlayService {
-    config: Config,
-    repo: Box<dyn GameRepositoryInterface>,
     visualizer: Box<dyn VisualizeGame>,
-    // game_service: Box<dyn GameServiceInterface>,
+    game_service: Box<dyn GameServiceInterface>,
 }
 
 impl GamePlayService {
-    fn new() -> Self {
+    pub fn new(repo: Box<dyn GameRepositoryInterface>) -> Self {
         let config = load_config();
-        let repo: Box<dyn GameRepositoryInterface> = Box::new(InMemoryGameRepository::new());
         let visualizer: Box<dyn VisualizeGame> =
             Box::new(GameVisualizeService::new(config.assets.clone()));
-        // let game_service: Box<dyn GameServiceInterface> = Box::new(GameService::new(repo));
+        let game_service: Box<dyn GameServiceInterface> = Box::new(GameService::new(repo));
 
         Self {
-            config,
-            repo,
             visualizer,
-            // game_service,
+            game_service,
         }
     }
 
-    fn get_field_image(&self, room: Room, field_id: FieldId) -> Vec<u8> {
-        vec![1, 4, 7]
+    pub fn get_field_image(&self, room: Room, field_id: FieldId) -> Vec<u8> {
+        let (game, _, winners_field) = self.game_service.check_game(room);
+        let field_status = game.board[field_id as usize].clone();
+
+        self.visualizer
+            .get_field_image(field_id, field_status, winners_field)
+    }
+
+    pub fn make_step(&self, room: Room, field_id: FieldId) -> GameResult<()> {
+        self.game_service.make_step(room, field_id)
     }
 }

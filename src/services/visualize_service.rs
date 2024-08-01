@@ -50,21 +50,18 @@ impl GameVisualizeService {
         field_status: FieldStatus,
         winners_field: Option<WinnerSequence>,
     ) -> PathBuf {
-        let line_postfix = match winners_field {
-            Some(w) => {
-                if w.contains(&field_id) {
-                    match Self::get_line_type(w) {
-                        LineType::Vertical => "_v",
-                        LineType::Horizontal => "_h",
-                        LineType::Diagonal1 => "_d1",
-                        LineType::Diagonal2 => "_d2",
-                    }
-                } else {
-                    ""
-                }
-            }
-            None => "",
-        };
+        let line_postfix = winners_field
+            .as_ref()
+            .filter(|w| w.contains(&field_id))
+            .and_then(|w| {
+                Some(match Self::get_line_type(w.to_vec()) {
+                    LineType::Vertical => "_v",
+                    LineType::Horizontal => "_h",
+                    LineType::Diagonal1 => "_d1",
+                    LineType::Diagonal2 => "_d2",
+                })
+            })
+            .unwrap_or("");
 
         let path = match field_status {
             FieldStatus::Empty => "Empty.png".to_string(),

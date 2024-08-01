@@ -1,6 +1,6 @@
-use crate::core::types::{GameMap, Room};
+use crate::core::types::{Game, GameResult, Room};
 
 pub trait GameRepositoryInterface {
-    fn get_board(&self, room: Room) -> Option<GameMap>;
-    fn update_board(&mut self, room: Room, board: GameMap);
+    fn get_game(&self, room: Room) -> Option<Game>;
+    fn update_game(&self, room: Room, game: Game) -> GameResult<()>;
 }

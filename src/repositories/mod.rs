@@ -1,4 +1,4 @@
-mod in_memory_repository;
+mod sqlite_repository;
 pub mod traits;
 
-pub use in_memory_repository::InMemoryGameRepository;
+pub use sqlite_repository::SqliteGameRepository;

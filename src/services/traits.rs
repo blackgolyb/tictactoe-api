@@ -1,9 +1,8 @@
-use crate::core::types::{FieldId, FieldStatus, GameStatus, Room, WinnerSequence};
+use crate::core::types::{FieldId, FieldStatus, Game, GameStatus, Room, WinnerSequence};
 
 pub trait GameServiceInterface {
-    fn get_field(&self, room: Room, field_id: FieldId) -> FieldStatus;
     fn make_step(&self, room: Room, field_id: FieldId) -> Result<(), String>;
-    fn check_game(&self, room: Room) -> (GameStatus, Option<WinnerSequence>);
+    fn check_game(&self, room: Room) -> (Game, GameStatus, Option<WinnerSequence>);
 }
 
 pub trait VisualizeGame {
