@@ -3,8 +3,7 @@ import sys
 
 UPDATE_FMT = "{url}/api/v1/{room}/update_field/{i}"
 GET_FMT = "{url}/api/v1/{room}/get_field/{i}"
-RESULT_FMT = "[![]({get})]({update})"
-# RESULT_FMT = '<a href="{update}"><img src="{get}" /></a>'
+RESULT_FMT = '<a href="{update}"><img src="{get}" width="100"/></a>'
 
 
 def format_cell(url, room, i):
