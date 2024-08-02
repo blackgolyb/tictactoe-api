@@ -62,8 +62,8 @@ pub struct Game {
 type Error = String;
 pub type GameResult<T> = Result<T, Error>;
 
-pub struct AppDep {
+pub struct AppDependency {
     pub conn: Arc<Mutex<Connection>>,
 }
 
-pub type AppDependency = web::Data<AppDep>;
+pub type AppState = web::Data<AppDependency>;

@@ -1,12 +1,13 @@
-use crate::core::types::{AppDependency, FieldId};
+use crate::core::types::{AppState, FieldId};
 use crate::repositories::SqliteGameRepository;
 use crate::services::GamePlayService;
 
 use actix_web::http::StatusCode;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
+use qstring::QString;
 
 #[get("/{room}/get_field/{field_id}")]
-async fn get_field(dep: AppDependency, param: web::Path<(String, FieldId)>) -> impl Responder {
+async fn get_field(dep: AppState, param: web::Path<(String, FieldId)>) -> impl Responder {
     let room = param.0.to_string();
     let field_id = param.1;
 
@@ -26,17 +27,24 @@ async fn get_field(dep: AppDependency, param: web::Path<(String, FieldId)>) -> i
 }
 
 #[get("/{room}/update_field/{field_id}")]
-async fn update_field(dep: AppDependency, param: web::Path<(String, FieldId)>) -> impl Responder {
+async fn update_field(dep: AppState, param: web::Path<(String, FieldId)>, req: HttpRequest) -> impl Responder {
     let room = param.0.to_string();
     let field_id = param.1;
+
+    let query_str = req.query_string();
+    let qs = QString::from(query_str);
+    let redirect = qs.get("r").map(String::from);
 
     let repo = Box::new(SqliteGameRepository::new(dep.conn.clone()));
 
     let service: GamePlayService = GamePlayService::new(repo);
     let res = service.make_step(room, field_id);
-
-    match res {
-        Ok(_) => HttpResponse::Ok(),
-        Err(_) => HttpResponse::build(StatusCode::BAD_REQUEST),
+    
+    match redirect {
+        Some(r) => HttpResponse::PermanentRedirect().append_header(("Location", r)).finish(),
+        None => match res {
+            Ok(_) => HttpResponse::Ok().finish(),
+            Err(_) => HttpResponse::build(StatusCode::BAD_REQUEST).finish(),
+        },
     }
 }
