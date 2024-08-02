@@ -19,8 +19,9 @@ async fn get_field(dep: AppDependency, param: web::Path<(String, FieldId)>) -> i
 
     HttpResponse::Ok()
         .content_type("image/png")
-        .append_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+        .append_header(("Cache-Control", "private, max-age=0, no-cache, no-store, must-revalidate"))
         .append_header(("Pragma", "no-cache"))
+
         .body(image_content)
 }
 
