@@ -51,7 +51,7 @@ impl GameService {
             if Self::check_horizontal(&board, i) {
                 return (
                     Self::get_winner(board, i * 3),
-                    Some(Self::get_win_horizontal(i * 3)),
+                    Some(Self::get_win_horizontal(i)),
                 );
             }
             if Self::check_vertical(&board, i) {
