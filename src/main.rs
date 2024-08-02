@@ -7,7 +7,6 @@ mod services;
 use core::{config::load_config, types::AppDependency};
 use db::{get_connection, init_db};
 use env_logger::Env;
-use handlers::{get_field, update_field};
 use std::sync::{Arc, Mutex};
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -37,8 +36,9 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api").service(
                     web::scope(&version_url)
-                        .service(get_field)
-                        .service(update_field),
+                        .service(handlers::get_field)
+                        .service(handlers::get_current_user)
+                        .service(handlers::update_field)
                 ),
             )
     })

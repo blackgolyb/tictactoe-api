@@ -39,4 +39,11 @@ impl GamePlayService {
     pub fn make_step(&self, room: Room, field_id: FieldId) -> GameResult<()> {
         self.game_service.make_step(room, field_id)
     }
+
+    pub fn get_current_player_image(&self, room: Room) -> Vec<u8> {
+        let player = self.game_service.check_game(room).0.current_player;
+
+        self.visualizer
+            .get_field_image(0, player, None)
+    }
 }
