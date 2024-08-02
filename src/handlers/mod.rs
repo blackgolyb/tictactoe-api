@@ -1,3 +1,3 @@
 mod api;
 
-pub use api::{get_field, update_field, get_current_user};
+pub use api::{get_current_user, get_field, update_field};

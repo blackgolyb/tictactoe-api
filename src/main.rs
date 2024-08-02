@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
                     web::scope(&version_url)
                         .service(handlers::get_field)
                         .service(handlers::get_current_user)
-                        .service(handlers::update_field)
+                        .service(handlers::update_field),
                 ),
             )
     })

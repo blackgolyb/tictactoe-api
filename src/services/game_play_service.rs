@@ -43,7 +43,6 @@ impl GamePlayService {
     pub fn get_current_player_image(&self, room: Room) -> Vec<u8> {
         let player = self.game_service.check_game(room).0.current_player;
 
-        self.visualizer
-            .get_field_image(0, player, None)
+        self.visualizer.get_field_image(0, player, None)
     }
 }
