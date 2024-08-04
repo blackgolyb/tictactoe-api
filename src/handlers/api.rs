@@ -58,6 +58,11 @@ async fn update_field(
     match redirect {
         Some(r) => HttpResponse::PermanentRedirect()
             .append_header(("Location", r))
+            .append_header((
+                "Cache-Control",
+                "private, max-age=0, no-cache, no-store, must-revalidate",
+            ))
+            .append_header(("Pragma", "no-cache"))
             .finish(),
         None => match res {
             Ok(_) => HttpResponse::Ok().finish(),
