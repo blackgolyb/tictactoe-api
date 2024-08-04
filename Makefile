@@ -1,7 +1,14 @@
-TARGET_FOLDER=target
 TARGET_FILE=tic_tac_toe_api
 BUILD_FOLDER=build
 ASSETS_FOLDER=assets
+
+ifeq ($(TARGET), )
+	TARGET_TYPE_FLAGS=
+	TARGET_FOLDER=target
+else
+	TARGET_TYPE_FLAGS=--target $(TARGET)
+	TARGET_FOLDER=target/$(TARGET)
+endif
 
 ifeq ($(BUILD_TYPE), )
 	BUILD_TYPE_FLAGS=
@@ -12,7 +19,7 @@ else
 endif
 
 build_target:
-	cargo build $(BUILD_TYPE_FLAGS)
+	cargo build $(BUILD_TYPE_FLAGS) $(TARGET_TYPE_FLAGS)
 
 .SILENT: pack_build
 pack_build:
