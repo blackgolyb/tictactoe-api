@@ -12,4 +12,6 @@ pub trait VisualizeGame {
         field_status: FieldStatus,
         winners_field: Option<WinnerSequence>,
     ) -> Vec<u8>;
+
+    fn get_game_over_image(&self) -> Vec<u8>;
 }

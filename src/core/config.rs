@@ -11,7 +11,7 @@ pub fn load_config() -> Config {
         port: 8080,
         host: "127.0.0.1".into(),
         api_version: 1,
-        assets: "./assets".into(),
+        assets: "assets".into(),
         db_path: "db.db".into(),
     }
 }

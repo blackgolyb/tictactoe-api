@@ -1,6 +1,6 @@
 use crate::core::{
     config::load_config,
-    types::{FieldId, GameResult, Room},
+    types::{FieldId, GameResult, GameStatus, Room},
 };
 
 use crate::repositories::traits::GameRepositoryInterface;
@@ -41,8 +41,14 @@ impl GamePlayService {
     }
 
     pub fn get_current_player_image(&self, room: Room) -> Vec<u8> {
-        let player = self.game_service.check_game(room).0.current_player;
+        let (game, status, _) = self.game_service.check_game(room);
 
-        self.visualizer.get_field_image(0, player, None)
+        match status {
+            GameStatus::InProgress | GameStatus::NotStarted => {
+                self.visualizer
+                    .get_field_image(0, game.current_player, None)
+            }
+            _ => self.visualizer.get_game_over_image(),
+        }
     }
 }

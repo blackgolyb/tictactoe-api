@@ -17,6 +17,11 @@ impl VisualizeGame for GameVisualizeService {
     ) -> Vec<u8> {
         std::fs::read(self.get_filed_image_path(field_id, field_status, winners_field)).unwrap()
     }
+
+    fn get_game_over_image(&self) -> Vec<u8> {
+        let path = "game_over.png";
+        std::fs::read(self.assets_folder.join(path)).unwrap()
+    }
 }
 
 impl GameVisualizeService {
