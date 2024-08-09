@@ -50,7 +50,7 @@ impl GameRepositoryInterface for SqliteGameRepository {
     fn get_game(&self, room: Room) -> Option<Game> {
         let conn = self.get_conn();
         let mut stmt = conn
-            .prepare("SELECT board, current_player FROM rooms WHERE name = ?1;")
+            .prepare("SELECT board, current_player FROM Room WHERE name = ?1;")
             .unwrap();
 
         let result = stmt.query_row([room], |row| {
@@ -70,15 +70,24 @@ impl GameRepositoryInterface for SqliteGameRepository {
     fn update_game(&self, room: Room, game: Game) -> GameResult<()> {
         let conn = self.get_conn();
         let board = self.encode_game_map(game.board);
+        let current_player: u8 = game.current_player.into();
 
         let result = conn.execute(
-            "INSERT OR REPLACE INTO rooms (name, board, current_player) VALUES (?1, ?2, ?3)",
-            params![room, board, Into::<u8>::into(game.current_player)],
+            "
+            INSERT INTO Room (name, board, current_player)
+            VALUES (?1, ?2, ?3)
+            ON CONFLICT (name) DO UPDATE SET
+                board = EXCLUDED.board,
+                current_player = EXCLUDED.current_player;
+            ",
+            params![room, board, current_player],
         );
 
         match result {
             Ok(_) => Ok(()),
-            Err(_) => Err("lol".to_string()),
+            Err(_) => Err(format!(
+                "Cannot upadte or insert into Room ({room}, {board}, {current_player})"
+            )),
         }
     }
 }
