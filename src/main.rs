@@ -35,6 +35,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(state.clone())
+            .service(handlers::hello)
             .service(
                 web::scope("/api").service(
                     web::scope(&version_url)

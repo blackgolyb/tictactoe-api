@@ -17,6 +17,11 @@ fn create_image_response(image_content: Vec<u8>) -> HttpResponse {
         .body(image_content)
 }
 
+#[get("/")]
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Tic Tac Toe")
+}
+
 #[get("/{room}/get_current_player")]
 async fn get_current_user(dep: AppState, room: web::Path<String>) -> impl Responder {
     let repo = Box::new(SqliteGameRepository::new(dep.conn.clone()));
