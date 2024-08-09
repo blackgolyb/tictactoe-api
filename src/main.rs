@@ -9,10 +9,12 @@ use db::{get_connection, init_db};
 use env_logger::Env;
 use std::sync::{Arc, Mutex};
 
+use dotenv::dotenv;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     let config = load_config();
     let host = config.host;
     let port = config.port;

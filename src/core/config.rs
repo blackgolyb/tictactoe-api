@@ -7,13 +7,23 @@ pub struct Config {
 }
 
 pub fn load_config() -> Config {
+    let host: String = std::env::var("HOST").expect("HOST must be set");
+    let port: u16 = std::env::var("PORT")
+        .expect("PORT must be set")
+        .parse::<u16>()
+        .expect("PORT must be integer number in range [0, 65535]");
+    let db_path: String = std::env::var("DB_PATH").expect("DB_PATH must be set");
+    let assets_path: String = std::env::var("ASSETS_PATH").expect("ASSETS_PATH must be set");
+    let api_version: u16 = std::env::var("API_VERSION")
+        .expect("API_VERSION must be set")
+        .parse::<u16>()
+        .expect("API_VERSION must be in integer number");
+
     Config {
-        port: 8080,
-        host: "127.0.0.1".into(),
-        api_version: 1,
-        assets: "assets".into(),
-        db_path: "db.db".into(),
+        port,
+        host,
+        api_version,
+        assets: assets_path,
+        db_path,
     }
 }
-
-// const config: Config = load_config();
