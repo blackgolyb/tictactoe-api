@@ -31,6 +31,9 @@ build: build_target pack_build
 
 .SILENT: run
 run: build
+	set -o allexport &&\
+	source ./env/.env &&\
+	set +o allexport &&\
 	$(BUILD_FOLDER)/$(TARGET_FILE)
 
 all: run
