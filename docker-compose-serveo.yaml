@@ -1,0 +1,22 @@
+version: "3.0"
+services:
+    app:
+        container_name: tic-tac-toe-api-serveo
+        image: blackgolyb/tic-tac-toe-api:serveo
+        restart: always
+        build:
+            context: .
+            dockerfile: Dockerfile.serveo
+        env_file:
+            - env/.env.deploy
+        ports:
+            - "8085:8080"
+        networks:
+            - custom
+        volumes:
+            - prod-data:/app/store
+networks:
+    custom:
+        driver: bridge
+volumes:
+    prod-data:

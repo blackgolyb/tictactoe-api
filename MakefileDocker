@@ -1,0 +1,14 @@
+up:
+	docker compose -f docker-compose.yaml up -d
+
+up_rebuild:
+	docker compose -f docker-compose.yaml up --build -d
+
+down:
+	docker compose -f docker-compose.yaml down --remove-orphans
+
+build_x86:
+	sh ./scripts/docker.sh x86
+
+build_arm:
+	sh ./scripts/docker.sh arm

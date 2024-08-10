@@ -1,0 +1,19 @@
+version: "3.0"
+services:
+    app:
+        container_name: tic-tac-toe-api
+        image: blackgolyb/tic-tac-toe-api:latest
+        restart: always
+        env_file:
+            - env/.env.deploy
+        ports:
+            - "8085:8080"
+        networks:
+            - custom
+        volumes:
+            - app-data:/app/store
+networks:
+    custom:
+        driver: bridge
+volumes:
+    app-data:
