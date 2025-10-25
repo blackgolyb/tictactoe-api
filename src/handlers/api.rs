@@ -1,3 +1,7 @@
+use std::fs;
+use std::path::PathBuf;
+
+use crate::core::config::load_config;
 use crate::core::types::{AppState, FieldId};
 use crate::repositories::SqliteGameRepository;
 use crate::services::GamePlayService;
@@ -18,8 +22,17 @@ fn create_image_response(image_content: Vec<u8>) -> HttpResponse {
 }
 
 #[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Tic Tac Toe")
+async fn main() -> impl Responder {
+    let config = load_config();
+    let main_page_path = PathBuf::from(config.assets).join("index.html");
+    let content = fs::read_to_string(main_page_path);
+    match content {
+        Ok(text) => HttpResponse::Ok().body(text),
+        Err(err) => {
+            eprintln!("Error reading index.html: {}", err);
+            HttpResponse::InternalServerError().body("Failed to load the main page.")
+        }
+    }
 }
 
 #[get("/{room}/get_current_player")]

@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+        />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <title>Tic Tac Toe</title>
+    </head>
+    <style>
+        :root {
+            --secondary: #e2e2e2;
+            --spacing: 0.25rem;
+            --s1: var(--spacing);
+            --s2: calc(var(--spacing) * 2);
+
+            font-size: 16px;
+        }
+
+        .field {
+            width: 100px;
+        }
+
+        .field:hover {
+            cursor: pointer;
+        }
+
+        .tabs-switcher__variants button {
+            border: none;
+            background: none;
+            padding: var(--s2) var(--s1);
+        }
+
+        .tabs-switcher__variants button:hover {
+            background: var(--secondary);
+        }
+
+        .tabs-switcher__body {
+            position: relative;
+            width: 100%;
+            overflow-x: hidden;
+            height: 100dvh;
+        }
+
+        .tabs-switcher__body div {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: fit-content;
+            overflow: hidden;
+            transition: all 0.25s ease-in-out;
+        }
+
+        .tabs-switcher__body .mid {
+            overflow-y: visible;
+            left: 0;
+        }
+
+        .tabs-switcher__body .left {
+            left: -100%;
+        }
+
+        .tabs-switcher__body .right {
+            left: 100%;
+        }
+
+        .tabs-switcher {
+            width: 100%;
+        }
+
+        #markdown-game-code {
+            white-space: pre-line;
+        }
+
+        #html-game-code {
+            white-space: pre-line;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content {
+            width: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 320px) {
+        }
+        @media (min-width: 481px) {
+        }
+        @media (min-width: 641px) {
+        }
+        @media (min-width: 800px) {
+            /* only for change content direction */
+            .content {
+                width: 100%;
+                flex-direction: row;
+            }
+
+            .tabs-switcher {
+                width: 50%;
+            }
+        }
+        @media (min-width: 961px) {
+        }
+        @media (min-width: 1025px) {
+            .content {
+                width: 90%;
+            }
+        }
+        @media (min-width: 1281px) {
+            .content {
+                width: 80%;
+            }
+        }
+    </style>
+    <body>
+        <div class="content">
+            <div class="tabs-switcher" id="game-switcher">
+                <div class="tabs-switcher__variants">
+                    <button data-for="preview" data-checked>Preview</button>
+                    <button data-for="code-md">Markdown</button>
+                    <button data-for="code-html">HTML</button>
+                </div>
+                <div id="tabs" class="tabs-switcher__body">
+                    <div data-tab="code-html">
+                        <code id="html-game-code">Some html</code>
+                    </div>
+                    <div data-tab="code-md">
+                        <code id="markdown-game-code">Some md</code>
+                    </div>
+                    <div data-tab="preview">
+                        <table id="game-preview">
+                            <thead>
+                                <tr>
+                                    <th>Tic</th>
+                                    <th>Tac</th>
+                                    <th>Toe</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fields"></tbody>
+                            <template id="fieldTemplate">
+                                <img class="field" />
+                            </template>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="form">
+                <h2>Create your game</h2>
+                <form id="game-maker-form">
+                    <label for="serverURL">server URL</label>
+                    <input name="serverURL" type="text" />
+                    <label for="room">room</label>
+                    <input name="room" type="text" />
+                    <label for="redirect">redirect</label>
+                    <input name="redirect" type="text" />
+                    <!-- <label for="gameSize">Game Size</label>
+                    <input name="gameSize" type="number" /> -->
+                    <button>Apply</button>
+                </form>
+            </div>
+        </div>
+        <script>
+            var BASE_URL = "https://tic_tac_toe_api.serveo.net";
+            // var BASE_URL = "http://localhost:8085";
+            var DEFAULT_ROOM = "main";
+
+            class GameAPI {
+                constructor(base_url, room, backref) {
+                    this.base = base_url;
+                    this.room = room;
+                    this.backref = backref;
+                }
+
+                getRouter() {
+                    return {
+                        getCurrentPlayer: () =>
+                            `${this.base}/api/v1/${this.room}/get_current_player`,
+                        getField: (fieldId) =>
+                            `${this.base}/api/v1/${this.room}/get_field/${fieldId}`,
+                        makeStep: (fieldId) => {
+                            const url = new URL(
+                                `${this.base}/api/v1/${this.room}/update_field/${fieldId}`,
+                            );
+                            if (this.backref !== undefined) {
+                                url.searchParams.set("r", this.backref);
+                            }
+                            return url.toString();
+                        },
+                    };
+                }
+            }
+
+            class TabSwitcher {
+                constructor(elemId) {
+                    this.elemId = elemId;
+                    this.initElements();
+                }
+
+                initElements() {
+                    const elem = document.getElementById(this.elemId);
+                    const tabsElem = elem.querySelector(
+                        ".tabs-switcher__variants",
+                    );
+                    const bodyElem = elem.querySelector(".tabs-switcher__body");
+                    const views = Array.from(
+                        bodyElem.querySelectorAll(`[data-tab]`),
+                    );
+
+                    this.tabs = {};
+                    this.selected = null;
+                    for (const switcher of tabsElem.children) {
+                        const name = switcher.dataset.for;
+                        if (switcher.dataset.checked !== undefined) {
+                            this.selected = name;
+                        }
+                        const view = views.find((v) => v.dataset.tab === name);
+                        this.tabs[name] = { switcher, view };
+                    }
+
+                    if (this.selected === null) {
+                        this.selected = Object.keys(this.tabs)[0];
+                    }
+
+                    for (const tabName in this.tabs) {
+                        this.tabs[tabName].switcher.addEventListener(
+                            "click",
+                            (e) => this.switch(e.target.dataset.for),
+                        );
+                    }
+
+                    this.switch(this.selected);
+                }
+
+                switch(tabName) {
+                    const tabsNames = Object.keys(this.tabs);
+                    const tab = this.tabs[tabName].view;
+                    const tabId = tabsNames.indexOf(tabName);
+
+                    for (const { 0: id, 1: name } of tabsNames.entries()) {
+                        const current = this.tabs[name].view;
+                        if (id < tabId) {
+                            current.classList.remove("right");
+                            current.classList.remove("mid");
+                            current.classList.add("left");
+                        } else if (id > tabId) {
+                            current.classList.remove("left");
+                            current.classList.remove("mid");
+                            current.classList.add("right");
+                        }
+                    }
+
+                    tab.classList.remove("right");
+                    tab.classList.remove("left");
+                    tab.classList.add("mid");
+                    this.selected = tabName;
+                }
+            }
+
+            var fieldTemplate = document.getElementById("fieldTemplate");
+            var fieldsContainer = document.getElementById("fields");
+            var codeHTMLContainer = document.getElementById("html-game-code");
+            var codeMarkdownContainer =
+                document.getElementById("markdown-game-code");
+            var gameMakerForm = document.getElementById("game-maker-form");
+
+            function initGameMakerForm(gameAPI) {
+                gameMakerForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(gameMakerForm);
+                    const data = Object.fromEntries(formData);
+                    gameAPI.base = data.serverURL;
+                    gameAPI.room = data.room;
+                    const backref = data.redirect.trim();
+                    gameAPI.backref = backref.length ? backref : undefined;
+                    updateAllGame(gameAPI);
+                });
+                const serverURLField =
+                    gameMakerForm.querySelector('[name="serverURL"]');
+                const roomField = gameMakerForm.querySelector('[name="room"]');
+                const redirectField =
+                    gameMakerForm.querySelector('[name="redirect"]');
+                serverURLField.value = gameAPI.base;
+                roomField.value = gameAPI.room;
+                redirectField.value = "";
+            }
+
+            function getMarkdownGameCode(gameAPI) {
+                const router = gameAPI.getRouter();
+                const getImg = (id) =>
+                    `<a href="${router.getField(id)}"><img src="${router.makeStep(id)}" width="100"/></a>`;
+                const currentPlayerIndicator = `<img src="${router.getCurrentPlayer()}" height="12"/>`;
+
+                let res =
+                    "Current Player: " +
+                    currentPlayerIndicator +
+                    "\n\n|Tic|Tac|Toe|\n|-|-|-|\n";
+
+                for (let i = 0; i < 3; i++) {
+                    const cells = Array.from(Array(3).keys(), (j) =>
+                        getImg(i * 3 + j),
+                    );
+                    res += "|" + cells.join("|") + "|\n";
+                }
+                return res;
+            }
+
+            function getHTMLGameCode(gameAPI) {
+                const router = gameAPI.getRouter();
+                const getImg = (id) =>
+                    `<a href="${router.getField(id)}"><img src="${router.makeStep(id)}" width="100"/></a>`;
+                const currentPlayerIndicator = `<img src="${router.getCurrentPlayer()}" height="12"/>`;
+
+                const template = (fields, currentPlayer) =>
+                    `\
+                    <div class="tic-tac-toe">\n\
+                    <div>\n\
+                    \    <span>Current Player: </span>\n\
+                    \    ${currentPlayer}\n\
+                    </div>\n\
+                    <table class="tic-tac-toe__gamemap">\n\
+                    \    <thead>\n\
+                    \        <tr>\n\
+                    \            <th>Tic</th>\n\
+                    \            <th>Tac</th>\n\
+                    \            <th>Toe</th>\n\
+                    \        </tr>\n\
+                    \    </thead>\n\
+                    \    <tbody>\n\
+                    \        ${fields}\n\
+                    \    </tbody>\n\
+                    </table>\n\
+                    </div>
+                    `;
+
+                let fields = "";
+                for (let i = 0; i < 3; i++) {
+                    const cells = Array.from(
+                        Array(3).keys(),
+                        (j) => "<td>" + getImg(i * 3 + j) + "</td>",
+                    );
+                    fields += "<tr>" + cells.join("") + "</tr>";
+                }
+
+                return template(fields, currentPlayerIndicator);
+            }
+
+            function urlWithTimestamp(url) {
+                if (!URL.canParse(url)) {
+                    console.err("failed to find img with this url: ", url);
+                }
+                const newUrl = new URL(url);
+                newUrl.searchParams.set("reloadT", Date.now().toString());
+                return newUrl;
+            }
+
+            async function reloadImg(url) {
+                updatedUrl = urlWithTimestamp(url);
+                document.body
+                    .querySelectorAll(`img[src^='${url}']`)
+                    .forEach((img) => {
+                        img.src = updatedUrl.toString();
+                    });
+            }
+
+            function reloadGameMap(gameAPI) {
+                for (let i = 0; i < 9; i++) {
+                    const url = gameAPI.getRouter().getField(i);
+                    reloadImg(url);
+                }
+            }
+
+            function createFieldNode(gameAPI, fieldId) {
+                const field = fieldTemplate.content.cloneNode(true);
+                const img = field.querySelector("img");
+                img.addEventListener("click", () => {
+                    fetch(gameAPI.getRouter().makeStep(fieldId), {
+                        mode: "no-cors",
+                    })
+                        .then(() => {
+                            reloadGameMap(gameAPI);
+                        })
+                        .catch((err) => {
+                            console.err(err);
+                        });
+                });
+                img.src = urlWithTimestamp(
+                    gameAPI.getRouter().getField(fieldId),
+                );
+                return field;
+            }
+
+            function fillGameMap(gameAPI) {
+                fieldsContainer.innerHTML = "";
+                for (let i = 0; i < 3; i++) {
+                    const row = document.createElement("tr");
+                    fieldsContainer.appendChild(row);
+                    for (let j = 0; j < 3; j++) {
+                        const col = document.createElement("td");
+                        const field = createFieldNode(gameAPI, i * 3 + j);
+                        row.appendChild(col);
+                        col.appendChild(field);
+                    }
+                }
+            }
+
+            function fillMarkdownCode(gameAPI) {
+                codeMarkdownContainer.textContent =
+                    getMarkdownGameCode(gameAPI);
+                // hljs.highlightElement(codeMarkdownContainer);
+            }
+
+            function fillHTMLCode(gameAPI) {
+                codeHTMLContainer.textContent = getHTMLGameCode(gameAPI);
+                // hljs.highlightElement(codeHTMLContainer);
+            }
+
+            function updateAllGame(gameAPI) {
+                fillGameMap(gameAPI);
+                fillMarkdownCode(gameAPI);
+                fillHTMLCode(gameAPI);
+            }
+
+            function main() {
+                const gameAPI = new GameAPI(BASE_URL, DEFAULT_ROOM);
+                updateAllGame(gameAPI);
+                initGameMakerForm(gameAPI);
+                const tabSwitcher = new TabSwitcher("game-switcher");
+            }
+
+            main();
+        </script>
+    </body>
+</html>
