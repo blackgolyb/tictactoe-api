@@ -25,9 +25,6 @@ case $1 in
     "arm")
         build_arm
         ;;
-    "arm_test")
-        build_arm_test
-        ;;
     *)
         echo "Unknown architecture $1"
         ;;
