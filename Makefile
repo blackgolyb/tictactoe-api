@@ -36,6 +36,15 @@ run: build
 	set +o allexport &&\
 	$(BUILD_FOLDER)/$(TARGET_FILE)
 
+serveo:
+	docker compose -f docker-compose-serveo.yaml up -d
+
+serveo_down:
+	docker compose -f docker-compose-serveo.yaml down
+
+serveo_build:
+	docker compose -f docker-compose-serveo.yaml build
+
 all: run
 
 .PHONY: all build run pack_build build_target
