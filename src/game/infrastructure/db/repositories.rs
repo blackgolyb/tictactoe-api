@@ -1,5 +1,3 @@
-use std::sync::MutexGuard;
-
 use rusqlite::params;
 
 use crate::game::{
@@ -103,22 +101,18 @@ impl GameMap {
 }
 
 pub struct SqliteGameRepository {
-    conn: DBConnection,
+    pool: DBConnection,
 }
 
 impl SqliteGameRepository {
-    pub fn new(conn: DBConnection) -> Self {
-        Self { conn }
-    }
-
-    fn get_conn(&self) -> MutexGuard<rusqlite::Connection> {
-        self.conn.lock().expect("Cannot get connection to database")
+    pub fn new(pool: DBConnection) -> Self {
+        Self { pool }
     }
 }
 
 impl GameRepository for SqliteGameRepository {
     fn get_by_name(&self, name: &str) -> Option<Game> {
-        let conn = self.get_conn();
+        let conn = self.pool.get().expect("Failed to get connection from pool");
         let mut stmt = conn
             .prepare("SELECT name, board, current_player, rules FROM Game WHERE name = ?1;")
             .unwrap();
@@ -134,7 +128,7 @@ impl GameRepository for SqliteGameRepository {
     }
 
     fn save(&self, game: &Game) {
-        let conn = self.get_conn();
+        let conn = self.pool.get().expect("Failed to get connection from pool");
 
         let name = game.name();
         let board = game.board().encode();

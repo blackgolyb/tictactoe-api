@@ -70,8 +70,8 @@ impl<'a> Migrator<'a> {
 /// Helper function to run all pending migrations
 pub fn run_migrations(db_connection: &DBConnection) {
     let conn = db_connection
-        .lock()
-        .expect("Failed to acquire database lock");
+        .get()
+        .expect("Failed to get connection from pool");
     let migrator = Migrator::new(&conn);
     migrator.up();
 }
