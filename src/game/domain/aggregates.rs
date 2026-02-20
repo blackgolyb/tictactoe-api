@@ -4,7 +4,7 @@ use crate::shared::utils::matrix::{
     iterate_vertical,
 };
 
-use super::models::{FieldState, GameId, GameMap, GameRules, GameState, Player};
+use super::models::{FieldState, GameMap, GameRules, GameState, Player};
 use super::value_objects::Segment;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -19,7 +19,6 @@ pub enum GameError {
 
 #[derive(Clone, Debug)]
 pub struct Game {
-    id: GameId,
     name: String,
     board: GameMap,
     current_player: Player,
@@ -28,10 +27,9 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(id: GameId, name: String, rules: GameRules, first_player: Player) -> Self {
+    pub fn new(name: String, rules: GameRules, first_player: Player) -> Self {
         let (w, h) = rules.game_size;
         Self {
-            id,
             name,
             rules,
             current_player: first_player,
@@ -39,24 +37,13 @@ impl Game {
         }
     }
 
-    pub fn load(
-        id: GameId,
-        name: String,
-        board: GameMap,
-        current_player: Player,
-        rules: GameRules,
-    ) -> Self {
+    pub fn load(name: String, board: GameMap, current_player: Player, rules: GameRules) -> Self {
         Self {
-            id,
             name,
             board,
             current_player,
             rules,
         }
-    }
-
-    pub fn id(&self) -> GameId {
-        self.id
     }
 
     pub fn name(&self) -> &str {
@@ -112,7 +99,7 @@ impl Game {
         };
     }
 
-    fn check_if_this_field_is_available(&self, x: usize, y: usize) -> bool {
+    fn check_if_field_is_available(&self, x: usize, y: usize) -> bool {
         self.board.get(x, y) == FieldState::Empty
     }
 
@@ -124,7 +111,7 @@ impl Game {
         let (w, h) = self.board.size();
         iterate_all_cells(w, h)
             .map(|(x, y)| self.board.get(x, y))
-            .all(|f| f == FieldState::Empty)
+            .all(|f| f != FieldState::Empty)
     }
 
     fn check_with<I, J>(&self, line_iter: I) -> Option<GameState>

@@ -22,12 +22,18 @@ impl VisualizeService {
 
 impl VisualizeService {
     pub fn visualize_current_player(&self, game: &Game) -> Result<Vec<u8>, ()> {
-        let current_player = match game.current_player() {
-            Player::O => "O",
-            Player::X => "X",
+        let is_game_over = game.check_game_status() != GameState::InProgress;
+
+        let asset = if is_game_over {
+            "game_over"
+        } else {
+            match game.current_player() {
+                Player::O => "O",
+                Player::X => "X",
+            }
         };
 
-        match self.assets.get(current_player) {
+        match self.assets.get(asset) {
             Ok(Asset::Image(a)) => Ok(a),
             _ => Err(()),
         }
@@ -41,10 +47,10 @@ impl VisualizeService {
         let postfix = match status {
             GameState::Winner(_, segment) if segment.contains(field_coordinates) => {
                 match segment.direction() {
-                    SegmentDirection::DiagonalAscending => "da",
-                    SegmentDirection::DiagonalDescending => "dd",
-                    SegmentDirection::Vertical => "v",
-                    SegmentDirection::Horizontal => "h",
+                    SegmentDirection::DiagonalAscending => "_da",
+                    SegmentDirection::DiagonalDescending => "_dd",
+                    SegmentDirection::Vertical => "_v",
+                    SegmentDirection::Horizontal => "_h",
                 }
             }
             _ => "",

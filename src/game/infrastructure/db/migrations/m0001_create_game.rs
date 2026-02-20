@@ -28,17 +28,3 @@ impl MigrationInterface for Migration {
         Ok(())
     }
 }
-
-/*
-# Check current player
-curl "http://localhost:8128/api/v1/big_game/get_current_player" -o current_player.png
-
-# Make a move at position (0,0)
-curl "http://localhost:8128/api/v1/big_game/update_field/0,0"
-
-# Get the field image
-curl "http://localhost:8128/api/v1/big_game/get_field/0,0" -o field.png
-
-# Make another move at position (1,1)
-curl "http://localhost:8128/api/v1/big_game/update_field/1,1"
- */

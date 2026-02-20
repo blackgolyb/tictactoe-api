@@ -18,6 +18,7 @@ impl AssetsLoaderFromDisk {
     fn registry(&self, asset: &str) -> Option<(AssetsTypes, &str)> {
         match asset {
             "empty" => Some((AssetsTypes::Image, "empty.png")),
+            "game_over" => Some((AssetsTypes::Image, "game_over.png")),
             "O" => Some((AssetsTypes::Image, "O.png")),
             "X" => Some((AssetsTypes::Image, "X.png")),
             "X_v" => Some((AssetsTypes::Image, "X_v.png")),

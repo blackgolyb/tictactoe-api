@@ -1,6 +1,3 @@
-use std::sync::{Arc, Mutex};
-
-use rusqlite::Connection;
 use std::sync::MutexGuard;
 
 use rusqlite::params;
@@ -8,7 +5,7 @@ use rusqlite::params;
 use crate::game::{
     domain::{
         aggregates::Game,
-        models::{FieldState, GameId, GameMap, GameRules, Player},
+        models::{FieldState, GameMap, GameRules, Player},
     },
     infrastructure::db::connection::DBConnection,
 };
@@ -29,18 +26,6 @@ impl Player {
             1 => Player::X,
             _ => unreachable!(),
         }
-    }
-}
-
-impl GameId {
-    #[inline]
-    pub fn encode(&self) -> u64 {
-        self.0
-    }
-
-    #[inline]
-    pub fn decode(raw: u64) -> Self {
-        Self { 0: raw }
     }
 }
 
@@ -132,36 +117,18 @@ impl SqliteGameRepository {
 }
 
 impl GameRepository for SqliteGameRepository {
-    fn get(&self, id: GameId) -> Option<Game> {
-        let conn = self.get_conn();
-        let mut stmt = conn
-            .prepare("SELECT id, name, board, current_player, rules FROM Game WHERE id = ?1;")
-            .unwrap();
-
-        stmt.query_row([id.encode()], |row| {
-            let id: GameId = row.get(0).map(GameId::decode)?;
-            let name: String = row.get(1)?;
-            let board: GameMap = row.get(2).map(GameMap::decode)?;
-            let current_player: Player = row.get(3).map(Player::decode)?;
-            let rules: GameRules = row.get(4).map(GameRules::decode)?;
-            Ok(Game::load(id, name, board, current_player, rules))
-        })
-        .ok()
-    }
-
     fn get_by_name(&self, name: &str) -> Option<Game> {
         let conn = self.get_conn();
         let mut stmt = conn
-            .prepare("SELECT id, name, board, current_player, rules FROM Game WHERE name = ?1;")
+            .prepare("SELECT name, board, current_player, rules FROM Game WHERE name = ?1;")
             .unwrap();
 
         stmt.query_row([name], |row| {
-            let id: GameId = row.get(0).map(GameId::decode)?;
-            let name: String = row.get(1)?;
-            let board: GameMap = row.get(2).map(GameMap::decode)?;
-            let current_player: Player = row.get(3).map(Player::decode)?;
-            let rules: GameRules = row.get(4).map(GameRules::decode)?;
-            Ok(Game::load(id, name, board, current_player, rules))
+            let name: String = row.get(0)?;
+            let board: GameMap = row.get(1).map(GameMap::decode)?;
+            let current_player: Player = row.get(2).map(Player::decode)?;
+            let rules: GameRules = row.get(3).map(GameRules::decode)?;
+            Ok(Game::load(name, board, current_player, rules))
         })
         .ok()
     }
@@ -169,22 +136,26 @@ impl GameRepository for SqliteGameRepository {
     fn save(&self, game: &Game) {
         let conn = self.get_conn();
 
-        let id = game.id().encode();
         let name = game.name();
         let board = game.board().encode();
         let current_player = game.current_player().encode();
         let rules = game.rules().encode();
 
+        println!(
+            "Saving game with params: name={}, board={}, current_player={}, rules={}",
+            name, board, current_player, rules
+        );
+
         conn.execute(
             "
-                INSERT INTO Game (id, name, board, current_player, rules)
-                VALUES (?1, ?2, ?3, ?4, ?5)
+                INSERT INTO Game (name, board, current_player, rules)
+                VALUES (?1, ?2, ?3, ?4)
                 ON CONFLICT (name) DO UPDATE SET
                     board = EXCLUDED.board,
                     current_player = EXCLUDED.current_player,
                     rules = EXCLUDED.rules;
                 ",
-            params![id, name, board, current_player, rules],
+            params![name, board, current_player, rules],
         )
         .expect("Game repo fails");
     }

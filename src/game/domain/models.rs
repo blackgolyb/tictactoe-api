@@ -19,9 +19,6 @@ pub enum GameState {
     Winner(Player, Segment),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GameId(pub u64);
-
 #[derive(Clone, Debug)]
 pub struct GameMap {
     pub data: Vec<Vec<FieldState>>,

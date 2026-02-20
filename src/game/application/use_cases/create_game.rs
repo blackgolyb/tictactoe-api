@@ -2,7 +2,7 @@ use crate::game::{
     application::interfaces::GameRepository,
     domain::{
         aggregates::Game,
-        models::{GameId, GameRules, Player},
+        models::{GameRules, Player},
     },
 };
 use crate::use_case;
@@ -15,9 +15,7 @@ use_case! {
         first_player: Player,
     }
 
-    State {
-        game_id: GameId,
-    }
+    State {}
 
     Dependencies {
         game_repo: Box<dyn GameRepository>,
@@ -30,8 +28,7 @@ use_case! {
 
     Story {
        validate_rules
-       generate_game_id
-       create_game
+       check_game_exists
        save_game
     }
 
@@ -51,26 +48,11 @@ use_case! {
             Ok(())
         }
 
-        generate_game_id |story: &mut Self| {
+        check_game_exists |story: &mut Self| {
             let input = story.input();
-            // Use hash of the name as game ID
-            use std::collections::hash_map::DefaultHasher;
-            use std::hash::{Hash, Hasher};
-
-            let mut hasher = DefaultHasher::new();
-            input.name.hash(&mut hasher);
-            let id = GameId(hasher.finish());
-
-            story.state.game_id = Some(id);
-            Ok(())
-        }
-
-        create_game |story: &mut Self| {
-            let input = story.input();
-            let game_id = story.state.game_id.ok_or(Error::InvalidRules)?;
 
             // Check if game already exists
-            if let Some(_) = story.game_repo.get(game_id) {
+            if let Some(_) = story.game_repo.get_by_name(&input.name) {
                 return Err(Error::GameAlreadyExists);
             }
 
@@ -79,11 +61,9 @@ use_case! {
 
         save_game |story: &mut Self| {
             let input = story.input();
-            let game_id = story.state.game_id.ok_or(Error::InvalidRules)?;
 
             let rules = GameRules::new(input.game_size, input.winning_length);
             let game = Game::new(
-                game_id,
                 input.name.clone(),
                 rules,
                 input.first_player,

@@ -56,8 +56,7 @@ pub async fn main_page() -> impl Responder {
     }
 }
 
-/// GET /{room}/get_current_player - Get image of the current player
-#[get("/{room}/get_current_player")]
+#[get("/{room}/get-current-player")]
 pub async fn get_current_player(
     state: web::Data<AppState>,
     room: web::Path<String>,
@@ -88,8 +87,7 @@ pub async fn get_current_player(
     }
 }
 
-/// GET /{room}/get_field/{field_id} - Get image of a specific field
-#[get("/{room}/get_field/{field_id}")]
+#[get("/{room}/get-field/{field_id}")]
 pub async fn get_field(
     state: web::Data<AppState>,
     path: web::Path<(String, String)>,
@@ -134,8 +132,7 @@ pub async fn get_field(
     }
 }
 
-/// GET /{room}/update_field/{field_id} - Make a move and update the field
-#[get("/{room}/update_field/{field_id}")]
+#[get("/{room}/make-move/{field_id}")]
 pub async fn update_field(
     state: web::Data<AppState>,
     path: web::Path<(String, String)>,
@@ -183,8 +180,7 @@ pub async fn update_field(
     }
 }
 
-/// POST /create_game - Create a new game with provided rules and name
-#[post("/create_game")]
+#[post("/create-game")]
 pub async fn create_game(state: web::Data<AppState>, req: HttpRequest) -> impl Responder {
     // Parse query parameters
     let query_str = req.query_string();
@@ -235,22 +231,10 @@ pub async fn create_game(state: web::Data<AppState>, req: HttpRequest) -> impl R
 
     match use_case.run(input) {
         Ok(_) => {
-            let state = use_case.state();
-            match state.game_id {
-                Some(game_id) => {
-                    let response_body = format!(
-                        "{{\"success\": true, \"game_id\": {}, \"name\": \"{}\"}}",
-                        game_id.0, name
-                    );
-                    HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(response_body)
-                }
-                None => create_error_response(
-                    "Failed to create game",
-                    actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
-                ),
-            }
+            let response_body = format!("{{\"success\": true, \"name\": \"{}\"}}", name);
+            HttpResponse::Ok()
+                .content_type("application/json")
+                .body(response_body)
         }
         Err(error) => {
             let error_message = match error {
