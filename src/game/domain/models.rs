@@ -42,6 +42,14 @@ impl GameMap {
         Err(())
     }
 
+    pub fn clear(&mut self) {
+        for row in &mut self.data {
+            for cell in row {
+                *cell = FieldState::Empty;
+            }
+        }
+    }
+
     pub fn size(&self) -> (usize, usize) {
         return (self.data[0].len(), self.data.len());
     }

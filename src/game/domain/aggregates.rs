@@ -11,6 +11,7 @@ use super::value_objects::Segment;
 pub enum GameError {
     FieldAlreadyOccupaed,
     StepIsOutOfTheBoard,
+    GameAlreadyEnded,
 }
 
 // enum GameEvents {
@@ -62,14 +63,21 @@ impl Game {
         &self.rules
     }
 
+    pub fn restart(&mut self) {
+        self.board.clear();
+        self.current_player = Player::O;
+    }
+
     pub fn make_move(&mut self, x: usize, y: usize) -> Result<(), GameError> {
         if !self.check_move_fit_the_board(x, y) {
             return Err(GameError::StepIsOutOfTheBoard);
         }
+        if self.check_game_status() != GameState::InProgress {
+            self.restart();
+        }
         if self.make_move_as_current_player(x, y).is_err() {
             return Err(GameError::FieldAlreadyOccupaed);
         };
-        // self.check_game_status();
         // self.events.push()
         self.change_current_player();
         Ok(())

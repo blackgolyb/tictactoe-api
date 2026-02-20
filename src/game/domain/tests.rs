@@ -150,3 +150,67 @@ fn test_draw_game() {
     let state = game.check_game_status();
     assert_eq!(state, crate::game::domain::models::GameState::Draw);
 }
+
+#[test]
+fn test_make_move_after_game_ended_restarts_game() {
+    // Create a winning board for X (horizontal win in first row)
+    let board = GameMap::load(vec![vec![FX, FX, FX], vec![FE, FO, FE], vec![FE, FE, FO]]);
+    let mut game = Game::load("test_game".to_string(), board, O, default_game_rules());
+
+    // Verify game has ended with X as winner
+    let state = game.check_game_status();
+    match state {
+        crate::game::domain::models::GameState::Winner(p, _) => {
+            assert_eq!(p, X);
+        }
+        _ => panic!("Expected X to win"),
+    }
+
+    // Make a move after game ended - should restart the game
+    assert_eq!(game.make_move(1, 1), Ok(()));
+
+    // Verify the board was cleared and restarted
+    assert_eq!(game.board().get(1, 1), FO); // New move should be placed
+    assert_eq!(game.board().get(0, 0), FE); // Old moves should be cleared
+    assert_eq!(game.board().get(1, 0), FE);
+    assert_eq!(game.board().get(2, 0), FE);
+
+    // Verify current player switched after the move
+    assert_eq!(game.current_player(), X);
+
+    // Verify game is in progress again
+    let new_state = game.check_game_status();
+    assert_eq!(
+        new_state,
+        crate::game::domain::models::GameState::InProgress
+    );
+}
+
+#[test]
+fn test_make_move_after_draw_restarts_game() {
+    // Board with a draw (all cells occupied, no winner)
+    let board = GameMap::load(vec![vec![FX, FO, FX], vec![FO, FO, FX], vec![FO, FX, FO]]);
+    let mut game = Game::load("test_game".to_string(), board, X, default_game_rules());
+
+    // Verify game ended in a draw
+    let state = game.check_game_status();
+    assert_eq!(state, crate::game::domain::models::GameState::Draw);
+
+    // Make a move after draw - should restart the game
+    assert_eq!(game.make_move(0, 0), Ok(()));
+
+    // Verify the board was cleared and restarted
+    assert_eq!(game.board().get(0, 0), FO); // Current player is O after restart
+    assert_eq!(game.board().get(0, 1), FE); // Other cells should be empty
+    assert_eq!(game.board().get(1, 1), FE);
+
+    // Verify current player switched after the move
+    assert_eq!(game.current_player(), X);
+
+    // Verify game is in progress again
+    let new_state = game.check_game_status();
+    assert_eq!(
+        new_state,
+        crate::game::domain::models::GameState::InProgress
+    );
+}
