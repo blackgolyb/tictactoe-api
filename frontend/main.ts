@@ -1,3 +1,10 @@
+import "./components/modal-window";
+import "./components/game-form";
+import "./components/types";
+import type { GameFormData } from "./components/game-form";
+import type { ModalWindow } from "./components/modal-window";
+import type { GameForm } from "./components/game-form";
+
 // const BASE_URL = "https://tic_tac_toe_api.serveo.net";
 const BASE_URL = "http://localhost:8128";
 const DEFAULT_PARAMS = {
@@ -31,7 +38,7 @@ interface Router {
   upsertGame: () => Route;
 }
 
-class GameAPI {
+export class GameAPI {
   base: string;
   room: string;
   backref: string | undefined;
@@ -213,41 +220,74 @@ const codeHTMLContainer = document.getElementById(
 const codeMarkdownContainer = document.getElementById(
   "markdown-game-code",
 ) as HTMLElement;
-const gameMakerForm = document.getElementById(
-  "game-maker-form",
-) as HTMLFormElement;
 
-function initGameMakerForm(gameAPI: GameAPI): void {
-  gameMakerForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const formData = new FormData(gameMakerForm);
-    const data = Object.fromEntries(formData) as Record<string, string>;
+function initGameModal(gameAPI: GameAPI): void {
+  // Create modal and form elements
+  const modal = document.createElement("modal-window") as ModalWindow;
+  const gameForm = document.createElement("game-form") as GameForm;
+
+  const modalTitle = document.createElement("h2");
+  modalTitle.slot = "title";
+  modalTitle.textContent = "Create Your Game";
+
+  modal.appendChild(modalTitle);
+  modal.appendChild(gameForm);
+  document.body.appendChild(modal);
+
+  // Set initial game API data
+  gameForm.setGameAPI(gameAPI);
+
+  // Create button to open modal
+  const openModalBtn = document.createElement("button");
+  openModalBtn.textContent = "Configure Game";
+  openModalBtn.className = "open-modal-btn";
+  openModalBtn.style.cssText = `
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    z-index: 999;
+  `;
+  openModalBtn.addEventListener("mouseenter", () => {
+    openModalBtn.style.backgroundColor = "#2563eb";
+    openModalBtn.style.transform = "translateY(-2px)";
+    openModalBtn.style.boxShadow = "0 6px 8px rgba(0, 0, 0, 0.15)";
+  });
+  openModalBtn.addEventListener("mouseleave", () => {
+    openModalBtn.style.backgroundColor = "#3b82f6";
+    openModalBtn.style.transform = "translateY(0)";
+    openModalBtn.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+  });
+  openModalBtn.addEventListener("click", () => {
+    modal.open();
+  });
+  document.body.appendChild(openModalBtn);
+
+  // Handle form submission
+  gameForm.addEventListener("game-submit", (e: CustomEvent<GameFormData>) => {
+    const data = e.detail;
     gameAPI.base = data.serverURL;
     gameAPI.room = data.room;
     const backref = data.redirect.trim();
     gameAPI.backref = backref.length ? backref : undefined;
+
     updateAllGame(gameAPI);
+    modal.close();
   });
-  const serverURLField = gameMakerForm.querySelector(
-    '[name="serverURL"]',
-  ) as HTMLInputElement;
-  const roomField = gameMakerForm.querySelector(
-    '[name="room"]',
-  ) as HTMLInputElement;
-  const redirectField = gameMakerForm.querySelector(
-    '[name="redirect"]',
-  ) as HTMLInputElement;
-  const changeHeight = gameMakerForm.querySelector(
-    '[name="height"]',
-  ) as HTMLInputElement;
-  const changeWidth = gameMakerForm.querySelector(
-    '[name="width"]',
-  ) as HTMLInputElement;
-  changeHeight.value = "3";
-  changeWidth.value = "3";
-  serverURLField.value = gameAPI.base;
-  roomField.value = gameAPI.room;
-  redirectField.value = "";
+
+  // Handle form cancellation
+  gameForm.addEventListener("game-cancel", () => {
+    modal.close();
+  });
 }
 
 function getMarkdownGameCode(
@@ -392,28 +432,10 @@ async function updateAllGame(gameAPI: GameAPI): Promise<void> {
   fillHTMLCode(gameAPI);
 }
 
-class App {
-  api: GameAPI;
-  name: string;
-  width: number;
-  height: number;
-  winningLength: number;
-  firstPlayer: string;
-
-  constructor(api: GameAPI) {
-    this.api = api;
-    this.name = DEFAULT_PARAMS.name;
-    this.width = DEFAULT_PARAMS.width;
-    this.height = DEFAULT_PARAMS.height;
-    this.winningLength = DEFAULT_PARAMS.winningLength;
-    this.firstPlayer = DEFAULT_PARAMS.firstPlayer;
-  }
-}
-
 function main(): void {
   const gameAPI = new GameAPI(BASE_URL, DEFAULT_PARAMS.name);
   updateAllGame(gameAPI);
-  initGameMakerForm(gameAPI);
+  initGameModal(gameAPI);
   new TabSwitcher("game-switcher");
 }
 
