@@ -68,8 +68,11 @@ export class TabContainer extends HTMLElement {
   }
 
   connectedCallback(): void {
-    this.setupTabs();
-    this.selectInitialTab();
+    // Use setTimeout to ensure all child elements are fully registered
+    setTimeout(() => {
+      this.setupTabs();
+      this.selectInitialTab();
+    }, 0);
   }
 
   private setupTabs(): void {
@@ -103,17 +106,22 @@ export class TabContainer extends HTMLElement {
   }
 
   private selectInitialTab(): void {
-    // Find the first tab with 'selected' attribute or just the first tab
-    const firstSelectedButton = Array.from(this.tabButtons.values()).find(
-      (btn) => btn.hasAttribute("selected"),
+    // Find the first tab with 'selected' attribute
+    const tabButtonsArray = Array.from(this.querySelectorAll("tab-button"));
+    const firstSelectedButton = tabButtonsArray.find((btn) =>
+      btn.hasAttribute("selected"),
     );
 
     if (firstSelectedButton) {
       const tabId = firstSelectedButton.getAttribute("for");
       if (tabId) {
         this.selectTab(tabId);
+        return;
       }
-    } else if (this.tabButtons.size > 0) {
+    }
+
+    // Fallback to first tab
+    if (this.tabButtons.size > 0) {
       const firstTabId = Array.from(this.tabButtons.keys())[0];
       this.selectTab(firstTabId);
     }
