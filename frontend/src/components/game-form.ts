@@ -1,16 +1,16 @@
-import { GameAPI } from "../main";
+import { store } from "../core/store";
 
-export interface GameFormData {
+export interface CreateGameFormData {
   serverURL: string;
-  room: string;
-  redirect: string;
-  height: number;
+  gameName: string;
   width: number;
+  height: number;
+  winning_length: number;
+  first_player: "X" | "O";
 }
 
-export class GameForm extends HTMLElement {
+export class CreateGameForm extends HTMLElement {
   private form: HTMLFormElement;
-  private gameAPI?: GameAPI;
 
   constructor() {
     super();
@@ -18,7 +18,7 @@ export class GameForm extends HTMLElement {
 
     // Create form structure
     this.form = document.createElement("form");
-    this.form.className = "game-form";
+    this.form.className = "create-game-form";
 
     const style = document.createElement("style");
     style.textContent = `
@@ -26,7 +26,7 @@ export class GameForm extends HTMLElement {
         display: block;
       }
 
-      .game-form {
+      .create-game-form {
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
@@ -150,27 +150,16 @@ export class GameForm extends HTMLElement {
       </div>
 
       <div class="form-group">
-        <label for="room">Room Name *</label>
+        <label for="gameName">Game Name *</label>
         <input
           type="text"
-          id="room"
-          name="room"
+          id="gameName"
+          name="gameName"
           placeholder="my-game-room"
           required
           pattern="[a-zA-Z0-9_-]+"
         />
         <small>Unique identifier for your game room (alphanumeric, _, -)</small>
-      </div>
-
-      <div class="form-group">
-        <label for="redirect">Redirect URL</label>
-        <input
-          type="url"
-          id="redirect"
-          name="redirect"
-          placeholder="https://example.com"
-        />
-        <small>Optional: Where to redirect after game action</small>
       </div>
 
       <div class="form-row">
@@ -201,6 +190,29 @@ export class GameForm extends HTMLElement {
           />
           <small>Grid height (3-10)</small>
         </div>
+
+        <div class="form-group">
+          <label for="winning_length">Winning Length *</label>
+          <input
+            type="number"
+            id="winning_length"
+            name="winning_length"
+            min="3"
+            max="10"
+            value="3"
+            required
+          />
+          <small>Number in a row to win (3-10)</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="first_player">First Player *</label>
+        <select id="first_player" name="first_player" required>
+          <option value="X">X</option>
+          <option value="O">O</option>
+        </select>
+        <small>Which player starts the game</small>
       </div>
 
       <div class="button-group">
@@ -219,25 +231,25 @@ export class GameForm extends HTMLElement {
     cancelBtn?.addEventListener("click", () => this.handleCancel());
   }
 
-  setGameAPI(api: GameAPI): void {
-    this.gameAPI = api;
+  connectedCallback(): void {
     this.populateForm();
   }
 
   private populateForm(): void {
-    if (!this.gameAPI) return;
-
     const serverURLInput = this.form.querySelector(
       "#serverURL",
     ) as HTMLInputElement;
-    const roomInput = this.form.querySelector("#room") as HTMLInputElement;
-    const redirectInput = this.form.querySelector(
-      "#redirect",
+    const gameNameInput = this.form.querySelector(
+      "#gameName",
     ) as HTMLInputElement;
 
-    if (serverURLInput) serverURLInput.value = this.gameAPI.base;
-    if (roomInput) roomInput.value = this.gameAPI.room;
-    if (redirectInput) redirectInput.value = this.gameAPI.backref || "";
+    if (serverURLInput) {
+      serverURLInput.value =
+        store.get<string>("serverUrl") || window.location.origin;
+    }
+    if (gameNameInput) {
+      gameNameInput.value = "";
+    }
   }
 
   private handleSubmit(e: Event): void {
@@ -249,12 +261,13 @@ export class GameForm extends HTMLElement {
     }
 
     const formData = new FormData(this.form);
-    const data: GameFormData = {
+    const data: CreateGameFormData = {
       serverURL: formData.get("serverURL") as string,
-      room: formData.get("room") as string,
-      redirect: formData.get("redirect") as string,
-      height: parseInt(formData.get("height") as string),
+      gameName: formData.get("gameName") as string,
       width: parseInt(formData.get("width") as string),
+      height: parseInt(formData.get("height") as string),
+      winning_length: parseInt(formData.get("winning_length") as string),
+      first_player: formData.get("first_player") as "X" | "O",
     };
 
     // Validate dimensions
@@ -262,15 +275,23 @@ export class GameForm extends HTMLElement {
       data.height < 3 ||
       data.height > 10 ||
       data.width < 3 ||
-      data.width > 10
+      data.width > 10 ||
+      data.winning_length < 3 ||
+      data.winning_length > 10
     ) {
-      this.showError("Width and height must be between 3 and 10.");
+      this.showError("All dimensions must be between 3 and 10.");
+      return;
+    }
+
+    // Validate winning length doesn't exceed dimensions
+    if (data.winning_length > Math.max(data.width, data.height)) {
+      this.showError("Winning length cannot exceed grid dimensions.");
       return;
     }
 
     this.hideError();
     this.dispatchEvent(
-      new CustomEvent("game-submit", {
+      new CustomEvent("game-create", {
         detail: data,
         bubbles: true,
         composed: true,
@@ -280,7 +301,7 @@ export class GameForm extends HTMLElement {
 
   private handleCancel(): void {
     this.dispatchEvent(
-      new CustomEvent("game-cancel", {
+      new CustomEvent("game-create-cancel", {
         bubbles: true,
         composed: true,
       }),
@@ -312,4 +333,4 @@ export class GameForm extends HTMLElement {
   }
 }
 
-customElements.define("game-form", GameForm);
+customElements.define("create-game-form", CreateGameForm);

@@ -21,30 +21,18 @@
                 <tab-button slot="tabs" for="code-html">HTML</tab-button>
 
                 <tab-panel slot="panels" tab-id="preview">
-                    <table id="game-preview">
-                        <thead>
-                            <tr>
-                                <th>Tic</th>
-                                <th>Tac</th>
-                                <th>Toe</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fields"></tbody>
-                        <template id="fieldTemplate">
-                            <img class="field" />
-                        </template>
-                    </table>
+                    <playable-game-view></playable-game-view>
                 </tab-panel>
 
                 <tab-panel slot="panels" tab-id="code-md">
-                    <code id="markdown-game-code">Some md</code>
+                    <markdown-game-view></markdown-game-view>
                 </tab-panel>
 
                 <tab-panel slot="panels" tab-id="code-html">
-                    <code id="html-game-code">Some html</code>
+                    <html-game-view></html-game-view>
                 </tab-panel>
             </tab-container>
         </div>
-        <script type="module" src="/main.ts"></script>
+        <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
