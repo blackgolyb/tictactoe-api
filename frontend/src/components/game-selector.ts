@@ -9,6 +9,7 @@ import { gameApi } from "../services/gameApi";
 export class GameSelector extends HTMLElement {
   private serverUrlInput: HTMLInputElement;
   private gameNameInput: HTMLInputElement;
+  private redirectUrlInput: HTMLInputElement;
   private unsubscribers: Array<() => void> = [];
 
   constructor() {
@@ -120,6 +121,23 @@ export class GameSelector extends HTMLElement {
     const container = document.createElement("div");
     container.className = "game-selector";
 
+    // Redirect URL field
+    const redirectUrlGroup = document.createElement("div");
+    redirectUrlGroup.className = "field-group";
+
+    const redirectUrlLabel = document.createElement("label");
+    redirectUrlLabel.textContent = "Redirect URL";
+    redirectUrlLabel.htmlFor = "redirectUrl";
+
+    this.redirectUrlInput = document.createElement("input");
+    this.redirectUrlInput.type = "url";
+    this.redirectUrlInput.id = "redirectUrl";
+    this.redirectUrlInput.placeholder = "https://github.com/user/repo";
+    this.redirectUrlInput.required = true;
+
+    redirectUrlGroup.appendChild(redirectUrlLabel);
+    redirectUrlGroup.appendChild(this.redirectUrlInput);
+
     // Server URL field
     const serverUrlGroup = document.createElement("div");
     serverUrlGroup.className = "field-group";
@@ -172,6 +190,7 @@ export class GameSelector extends HTMLElement {
     buttonGroup.appendChild(selectButton);
     buttonGroup.appendChild(createButton);
 
+    container.appendChild(redirectUrlGroup);
     container.appendChild(serverUrlGroup);
     container.appendChild(gameNameGroup);
     container.appendChild(buttonGroup);
@@ -180,6 +199,13 @@ export class GameSelector extends HTMLElement {
     this.shadowRoot!.appendChild(container);
 
     // Handle Enter key
+    this.redirectUrlInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.handleSelect();
+      }
+    });
+
     this.serverUrlInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -207,6 +233,12 @@ export class GameSelector extends HTMLElement {
 
   private setupStoreListeners(): void {
     // Update inputs when store changes
+    const unsubRedirectUrl = store.onChange("redirectUrl", (value) => {
+      if (value && this.redirectUrlInput.value !== value) {
+        this.redirectUrlInput.value = value;
+      }
+    });
+
     const unsubServerUrl = store.onChange("serverUrl", (value) => {
       if (value && this.serverUrlInput.value !== value) {
         this.serverUrlInput.value = value;
@@ -219,12 +251,19 @@ export class GameSelector extends HTMLElement {
       }
     });
 
-    this.unsubscribers.push(unsubServerUrl, unsubGameName);
+    this.unsubscribers.push(unsubRedirectUrl, unsubServerUrl, unsubGameName);
   }
 
   private loadFromStore(): void {
+    const redirectUrl = store.get<string>("redirectUrl");
     const serverUrl = store.get<string>("serverUrl");
     const gameName = store.get<string>("gameName");
+
+    if (redirectUrl) {
+      this.redirectUrlInput.value = redirectUrl;
+    } else {
+      this.redirectUrlInput.value = window.location.href;
+    }
 
     if (serverUrl) {
       this.serverUrlInput.value = serverUrl;
@@ -241,18 +280,22 @@ export class GameSelector extends HTMLElement {
 
   private handleSelect(): void {
     if (
+      !this.redirectUrlInput.checkValidity() ||
       !this.serverUrlInput.checkValidity() ||
       !this.gameNameInput.checkValidity()
     ) {
+      this.redirectUrlInput.reportValidity();
       this.serverUrlInput.reportValidity();
       this.gameNameInput.reportValidity();
       return;
     }
 
+    const redirectUrl = this.redirectUrlInput.value;
     const serverUrl = this.serverUrlInput.value;
     const gameName = this.gameNameInput.value;
 
     // Update store directly - this will trigger effects in main.ts
+    store.set("redirectUrl", redirectUrl);
     store.set("serverUrl", serverUrl);
     store.set("gameName", gameName);
 
@@ -263,6 +306,7 @@ export class GameSelector extends HTMLElement {
     this.dispatchEvent(
       new CustomEvent("game-select", {
         detail: {
+          redirectUrl: redirectUrl,
           serverURL: serverUrl,
           gameName: gameName,
         },

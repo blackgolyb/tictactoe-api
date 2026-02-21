@@ -175,11 +175,14 @@ export class MarkdownGameView extends HTMLElement {
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
 
+    const unsubRedirectUrl = store.onChange("redirectUrl", () => this.render());
+
     this.unsubscribers.push(
       unsubGameName,
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
+      unsubRedirectUrl,
     );
   }
 
@@ -227,7 +230,8 @@ export class MarkdownGameView extends HTMLElement {
         const fieldUrl = gameApi.getFieldUrl(gameName, point);
         const makeMoveUrl = gameApi.getMakeMoveUrl(gameName, point);
         // Add redirect parameter to make-move URL
-        const redirectUrl = `${window.location.origin}${window.location.pathname}`;
+        const redirectUrl =
+          store.get<string>("redirectUrl") || window.location.href;
         const fullMakeMoveUrl = `${makeMoveUrl}?r=${encodeURIComponent(redirectUrl)}`;
         cells.push(
           `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" width="100"/></a>`,
