@@ -190,20 +190,20 @@ export class CreateGameForm extends HTMLElement {
           />
           <small>Grid height (3-10)</small>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label for="winning_length">Winning Length *</label>
-          <input
-            type="number"
-            id="winning_length"
-            name="winning_length"
-            min="3"
-            max="10"
-            value="3"
-            required
-          />
-          <small>Number in a row to win (3-10)</small>
-        </div>
+      <div class="form-group">
+        <label for="winning_length">Winning Length *</label>
+        <input
+          type="number"
+          id="winning_length"
+          name="winning_length"
+          min="3"
+          max="10"
+          value="3"
+          required
+        />
+        <small>Number in a row to win (3-10)</small>
       </div>
 
       <div class="button-group">
