@@ -1,3 +1,13 @@
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install
+
+COPY frontend/ ./
+RUN npm run build
+
 FROM rust:latest AS builder
 
 WORKDIR /app
@@ -8,6 +18,8 @@ RUN apt update && apt -y install musl-tools &&\
 COPY Cargo.toml Cargo.lock Makefile ./
 COPY assets assets
 COPY src src
+
+COPY --from=frontend-builder /frontend/dist/index.html /app/assets/index.html
 
 RUN make build BUILD_TYPE=release TARGET=x86_64-unknown-linux-musl &&\
     mkdir /app/build/store
