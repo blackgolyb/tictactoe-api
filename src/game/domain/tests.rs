@@ -234,3 +234,26 @@ fn test_win_takes_priority_over_draw() {
         _ => panic!("Expected win for X, not draw, even though board is full"),
     }
 }
+
+#[test]
+fn test_win_takes_priority_over_draw_diagonal() {
+    // Board where all cells are occupied AND there's a winning condition
+    // X wins diagonally (descending), but the board is also full
+    // XOX
+    // XXO
+    // OOX
+    let board = GameMap::load(vec![vec![FX, FO, FX], vec![FX, FX, FO], vec![FO, FO, FX]]);
+    let game = Game::load("test_game".to_string(), board, X, default_game_rules());
+    let state = game.check_game_status();
+
+    // Should detect win, not draw
+    match state {
+        crate::game::domain::models::GameState::Winner(p, segment) => {
+            assert_eq!(p, X);
+            assert_eq!(segment.direction(), SegmentDirection::DiagonalDescending);
+            assert_eq!(segment.start(), (0, 0));
+            assert_eq!(segment.end(), (2, 2));
+        }
+        _ => panic!("Expected diagonal win for X, not draw, even though board is full"),
+    }
+}
