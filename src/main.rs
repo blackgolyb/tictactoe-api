@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 
@@ -58,7 +59,15 @@ async fn main() -> std::io::Result<()> {
 
     // Start HTTP server
     HttpServer::new(move || {
+        // Configure CORS
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .wrap(Logger::default())
             .app_data(app_state.clone())
             // Serve main page
