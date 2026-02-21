@@ -211,22 +211,29 @@ export class MarkdownGameView extends HTMLElement {
     height: number,
   ): string {
     const lines: string[] = [];
+    const serverUrl = store.get<string>("serverUrl");
 
-    // Current player indicator
+    // Current player indicator with HTML img tag
     const currentPlayerUrl = gameApi.getCurrentPlayerUrl(gameName);
-    lines.push(`Current Player: ![Current Player](${currentPlayerUrl})`);
+    lines.push(`Current Player:`);
+    lines.push(`<img src="${currentPlayerUrl}" height="12"/>`);
     lines.push("");
 
-    // Game board table
+    // Game board table with HTML tags
     for (let y = 0; y < height; y++) {
       const cells: string[] = [];
       for (let x = 0; x < width; x++) {
         const point: Point = [x, y];
         const fieldUrl = gameApi.getFieldUrl(gameName, point);
         const makeMoveUrl = gameApi.getMakeMoveUrl(gameName, point);
-        cells.push(`[![Field](${fieldUrl})](${makeMoveUrl})`);
+        // Add redirect parameter to make-move URL
+        const redirectUrl = `${window.location.origin}${window.location.pathname}`;
+        const fullMakeMoveUrl = `${makeMoveUrl}?r=${encodeURIComponent(redirectUrl)}`;
+        cells.push(
+          `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" width="100"/></a>`,
+        );
       }
-      lines.push(`|${cells.join("|")}|`);
+      lines.push(`| ${cells.join(" | ")} |`);
     }
 
     return lines.join("\n");
