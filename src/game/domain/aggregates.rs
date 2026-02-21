@@ -84,14 +84,21 @@ impl Game {
     }
 
     pub fn check_game_status(&self) -> GameState {
+        let winner_state = self
+            .check_vertical()
+            .or_else(|| self.check_horizontal())
+            .or_else(|| self.check_diagonal_ascending())
+            .or_else(|| self.check_diagonal_descending());
+
+        if let Some(state) = winner_state {
+            return state;
+        }
+
         if self.check_draw() {
             return GameState::Draw;
         }
-        self.check_vertical()
-            .or_else(|| self.check_horizontal())
-            .or_else(|| self.check_diagonal_ascending())
-            .or_else(|| self.check_diagonal_descending())
-            .unwrap_or(GameState::InProgress)
+
+        GameState::InProgress
     }
 
     fn check_move_fit_the_board(&self, x: usize, y: usize) -> bool {
