@@ -233,9 +233,7 @@ pub async fn create_game(state: web::Data<AppState>, req: HttpRequest) -> impl R
     match use_case.run(input) {
         Ok(_) => {
             let response_body = format!("{{\"success\": true, \"name\": \"{}\"}}", name);
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(response_body)
+            create_json_response(response_body)
         }
         Err(error) => {
             let error_message = match error {
