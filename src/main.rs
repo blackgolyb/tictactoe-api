@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 
@@ -11,7 +12,9 @@ use tic_tac_toe_api::{
             di::DIContainer,
         },
         presentation::api::{
-            handlers::{create_game, get_current_player, get_field, main_page, update_field},
+            handlers::{
+                create_game, get_current_player, get_field, get_game_rules, main_page, update_field,
+            },
             state::AppState,
         },
     },
@@ -56,7 +59,15 @@ async fn main() -> std::io::Result<()> {
 
     // Start HTTP server
     HttpServer::new(move || {
+        // Configure CORS
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .wrap(Logger::default())
             .app_data(app_state.clone())
             // Serve main page
@@ -68,6 +79,7 @@ async fn main() -> std::io::Result<()> {
                         .service(create_game)
                         .service(get_current_player)
                         .service(get_field)
+                        .service(get_game_rules)
                         .service(update_field),
                 ),
             )

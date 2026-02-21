@@ -6,20 +6,21 @@ use std::path::PathBuf;
 use crate::core::config::load_config;
 use crate::game::{
     application::use_cases::{
-        create_game::Input as CreateGameInput, make_move::Input as MakeMoveInput,
+        create_game::Input as CreateGameInput, get_game_rules::Input as GetGameRulesInput,
+        make_move::Input as MakeMoveInput,
         visualize_board_field::Input as VisualizeBoardFieldInput,
         visualize_current_field::Input as VisualizeCurrentFieldInput,
     },
     domain::{models::Player, value_objects::Point},
     infrastructure::di::{
-        resolve_create_game_use_case, resolve_make_move_use_case,
+        resolve_create_game_use_case, resolve_get_game_rules_use_case, resolve_make_move_use_case,
         resolve_visualize_board_field_use_case, resolve_visualize_current_field_use_case,
     },
     presentation::api::{
         dtos::{FieldDto, RedirectQuery, RoomDto},
         responses::{
             create_error_response, create_html_response, create_image_response,
-            create_redirect_response,
+            create_json_response, create_redirect_response,
         },
         state::AppState,
     },
@@ -232,9 +233,7 @@ pub async fn create_game(state: web::Data<AppState>, req: HttpRequest) -> impl R
     match use_case.run(input) {
         Ok(_) => {
             let response_body = format!("{{\"success\": true, \"name\": \"{}\"}}", name);
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(response_body)
+            create_json_response(response_body)
         }
         Err(error) => {
             let error_message = match error {
@@ -247,5 +246,37 @@ pub async fn create_game(state: web::Data<AppState>, req: HttpRequest) -> impl R
             };
             create_error_response(error_message, actix_web::http::StatusCode::BAD_REQUEST)
         }
+    }
+}
+
+/// GET /{room}/rules - Get game rules by game name
+#[get("/{room}/rules")]
+pub async fn get_game_rules(state: web::Data<AppState>, room: web::Path<String>) -> impl Responder {
+    let game_name = room.into_inner();
+
+    // Resolve use case from DI container
+    let mut use_case = resolve_get_game_rules_use_case(&state.container);
+
+    // Create input and run use case
+    let input = GetGameRulesInput { name: game_name };
+
+    match use_case.run(input) {
+        Ok(_) => {
+            let state = use_case.state();
+            match &state.rules {
+                Some(rules) => {
+                    let response_body = format!(
+                        "{{\"game_size\": [{}, {}], \"winning_length\": {}}}",
+                        rules.game_size.0, rules.game_size.1, rules.winning_length
+                    );
+                    create_json_response(response_body)
+                }
+                None => create_error_response(
+                    "Failed to get game rules",
+                    actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
+                ),
+            }
+        }
+        Err(_) => create_error_response("Game not found", actix_web::http::StatusCode::NOT_FOUND),
     }
 }

@@ -3,65 +3,40 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
-        />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
         <title>Tic Tac Toe</title>
         <link rel="stylesheet" href="/style.css" />
     </head>
     <body>
         <div class="content">
-            <div class="tabs-switcher" id="game-switcher">
-                <div class="tabs-switcher__variants">
-                    <button data-for="preview" data-checked>Preview</button>
-                    <button data-for="code-md">Markdown</button>
-                    <button data-for="code-html">HTML</button>
-                </div>
-                <div id="tabs" class="tabs-switcher__body">
-                    <div data-tab="code-html">
-                        <code id="html-game-code">Some html</code>
-                    </div>
-                    <div data-tab="code-md">
-                        <code id="markdown-game-code">Some md</code>
-                    </div>
-                    <div data-tab="preview">
-                        <table id="game-preview">
-                            <thead>
-                                <tr>
-                                    <th>Tic</th>
-                                    <th>Tac</th>
-                                    <th>Toe</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fields"></tbody>
-                            <template id="fieldTemplate">
-                                <img class="field" />
-                            </template>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="form">
-                <h2>Create your game</h2>
-                <form id="game-maker-form">
-                    <label for="serverURL">server URL</label>
-                    <input name="serverURL" type="text" />
-                    <label for="room">room</label>
-                    <input name="room" type="text" />
-                    <label for="redirect">redirect</label>
-                    <input name="redirect" type="text" />
-                    <label for="height">height</label>
-                    <input name="height" type="number" />
-                    <label for="width">width</label>
-                    <input name="width" type="number" />
-                    <!-- <label for="gameSize">Game Size</label>
-                    <input name="gameSize" type="number" /> -->
-                    <button>Apply</button>
-                </form>
-            </div>
+            <game-selector></game-selector>
+
+            <tab-container id="game-switcher">
+                <tab-button slot="tabs" for="preview" selected
+                    >Preview</tab-button
+                >
+                <tab-button slot="tabs" for="code-md">Markdown</tab-button>
+                <tab-button slot="tabs" for="code-html">HTML</tab-button>
+
+                <tab-panel slot="panels" tab-id="preview">
+                    <playable-game-view></playable-game-view>
+                </tab-panel>
+
+                <tab-panel slot="panels" tab-id="code-md">
+                    <markdown-game-view></markdown-game-view>
+                </tab-panel>
+
+                <tab-panel slot="panels" tab-id="code-html">
+                    <html-game-view></html-game-view>
+                </tab-panel>
+            </tab-container>
         </div>
-        <script type="module" src="/main.js"></script>
+
+        <!-- Create Game Modal -->
+        <modal-window id="create-game-modal">
+            <h2 slot="title">Create New Game</h2>
+            <create-game-form></create-game-form>
+        </modal-window>
+
+        <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
