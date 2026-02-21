@@ -1,4 +1,5 @@
 import { store } from "../core/store";
+import { gameApi } from "../services/gameApi";
 
 export interface CreateGameFormData {
   serverURL: string;
@@ -235,6 +236,10 @@ export class CreateGameForm extends HTMLElement {
     this.populateForm();
   }
 
+  disconnectedCallback(): void {
+    // Cleanup if needed
+  }
+
   private populateForm(): void {
     const serverURLInput = this.form.querySelector(
       "#serverURL",
@@ -252,7 +257,7 @@ export class CreateGameForm extends HTMLElement {
     }
   }
 
-  private handleSubmit(e: Event): void {
+  private async handleSubmit(e: Event): Promise<void> {
     e.preventDefault();
 
     if (!this.form.checkValidity()) {
@@ -290,13 +295,40 @@ export class CreateGameForm extends HTMLElement {
     }
 
     this.hideError();
-    this.dispatchEvent(
-      new CustomEvent("game-create", {
-        detail: data,
-        bubbles: true,
-        composed: true,
-      }),
-    );
+
+    // Update game API base URL
+    gameApi.setBaseUrl(data.serverURL);
+
+    // Create the game on the server
+    try {
+      await gameApi.createOrUpdateGame(data.gameName, {
+        width: data.width,
+        height: data.height,
+        winning_length: data.winning_length,
+        first_player: data.first_player,
+      });
+
+      // Update store - this will trigger effects to fetch rules
+      store.set("serverUrl", data.serverURL);
+      store.set("gameName", data.gameName);
+
+      // Dispatch success event
+      this.dispatchEvent(
+        new CustomEvent("game-create", {
+          detail: data,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+
+      // Reset form
+      this.reset();
+    } catch (error) {
+      console.error("Failed to create game:", error);
+      this.showError(
+        "Failed to create game. Please check your settings and try again.",
+      );
+    }
   }
 
   private handleCancel(): void {

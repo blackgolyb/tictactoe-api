@@ -1,5 +1,4 @@
 import "./components/modal-window";
-import "./components/select-game-form";
 import "./components/game-form";
 import "./components/game-selector";
 import "./components/tab-container";
@@ -7,143 +6,37 @@ import "./components/gameView/playable";
 import "./components/gameView/html";
 import "./components/gameView/md";
 
-import type { SelectGameFormData } from "./components/select-game-form";
-import type { CreateGameFormData } from "./components/game-form";
-import type { ModalWindow } from "./components/modal-window";
-
 import { store } from "./core/store";
 import { gameApi } from "./services/gameApi";
 import { DEFAULT_PARAMS } from "./core/constants";
+import type { ModalWindow } from "./components/modal-window";
 
 /**
- * Initialize the select game modal
+ * Wire up component interactions
  */
-function initSelectGameModal(): ModalWindow {
-  const modal = document.createElement("modal-window") as ModalWindow;
-  const selectGameForm = document.createElement("select-game-form");
+function setupComponentWiring(): void {
+  const gameSelector = document.querySelector("game-selector");
+  const createModal = document.getElementById(
+    "create-game-modal",
+  ) as ModalWindow;
+  const createForm = document.querySelector("create-game-form");
 
-  const modalTitle = document.createElement("h2");
-  modalTitle.slot = "title";
-  modalTitle.textContent = "Select Game";
-
-  modal.appendChild(modalTitle);
-  modal.appendChild(selectGameForm);
-  document.body.appendChild(modal);
-
-  // Handle form submission
-  selectGameForm.addEventListener(
-    "game-select",
-    async (e: CustomEvent<SelectGameFormData>) => {
-      const data = e.detail;
-
-      // Update store - this will trigger the effect to fetch rules
-      store.set("serverUrl", data.serverURL);
-      store.set("gameName", data.gameName);
-
-      // Update game API base URL
-      gameApi.setBaseUrl(data.serverURL);
-
-      modal.close();
-    },
-  );
-
-  // Handle form cancellation
-  selectGameForm.addEventListener("game-select-cancel", () => {
-    modal.close();
-  });
-
-  return modal;
-}
-
-/**
- * Initialize the create game modal
- */
-function initCreateGameModal(): ModalWindow {
-  const modal = document.createElement("modal-window") as ModalWindow;
-  const createGameForm = document.createElement("create-game-form");
-
-  const modalTitle = document.createElement("h2");
-  modalTitle.slot = "title";
-  modalTitle.textContent = "Create New Game";
-
-  modal.appendChild(modalTitle);
-  modal.appendChild(createGameForm);
-  document.body.appendChild(modal);
-
-  // Handle form submission
-  createGameForm.addEventListener(
-    "game-create",
-    async (e: CustomEvent<CreateGameFormData>) => {
-      const data = e.detail;
-
-      // Update game API base URL
-      gameApi.setBaseUrl(data.serverURL);
-
-      // Create the game on the server
-      try {
-        await gameApi.createOrUpdateGame(data.gameName, {
-          width: data.width,
-          height: data.height,
-          winning_length: data.winning_length,
-          first_player: data.first_player,
-        });
-
-        // Update store - this will trigger the effect to fetch rules
-        store.set("serverUrl", data.serverURL);
-        store.set("gameName", data.gameName);
-
-        modal.close();
-      } catch (error) {
-        console.error("Failed to create game:", error);
-        alert(
-          "Failed to create game. Please check your settings and try again.",
-        );
-      }
-    },
-  );
-
-  // Handle form cancellation
-  createGameForm.addEventListener("game-create-cancel", () => {
-    modal.close();
-  });
-
-  return modal;
-}
-
-/**
- * Initialize the game selector in the main window
- */
-function initGameSelector(
-  _selectGameModal: ModalWindow,
-  createGameModal: ModalWindow,
-): void {
-  const gameSelector = document.createElement("game-selector");
-
-  // Insert at the top of the content
-  const content = document.querySelector(".content");
-  if (content) {
-    content.insertBefore(gameSelector, content.firstChild);
+  // Wire game-selector to open create modal
+  if (gameSelector && createModal) {
+    gameSelector.addEventListener("open-create-game", () => {
+      createModal.open();
+    });
   }
 
-  // Handle game select
-  gameSelector.addEventListener(
-    "game-select",
-    (e: CustomEvent<SelectGameFormData>) => {
-      const data = e.detail;
-
-      // Update store - this will trigger the effect to fetch rules
-      store.set("serverUrl", data.serverURL);
-      store.set("gameName", data.gameName);
-
-      // Update game API base URL
-      gameApi.setBaseUrl(data.serverURL);
-    },
-  );
-
-  // Handle create new game
-  gameSelector.addEventListener("open-create-game", () => {
-    createGameModal.open();
-  });
+  // Wire create form to close modal on success or cancel
+  if (createForm && createModal) {
+    createForm.addEventListener("game-create", () => {
+      createModal.close();
+    });
+    createForm.addEventListener("game-create-cancel", () => {
+      createModal.close();
+    });
+  }
 }
 
 /**
@@ -211,12 +104,8 @@ function setupGameRulesEffect(): void {
 async function main(): Promise<void> {
   console.log("Initializing Tic Tac Toe application...");
 
-  // Initialize modals
-  const selectGameModal = initSelectGameModal();
-  const createGameModal = initCreateGameModal();
-
-  // Initialize game selector
-  initGameSelector(selectGameModal, createGameModal);
+  // Wire up component interactions
+  setupComponentWiring();
 
   // Setup effect to fetch game rules when serverUrl or gameName changes
   setupGameRulesEffect();

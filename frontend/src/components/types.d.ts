@@ -1,6 +1,5 @@
 import { ModalWindow } from "./modal-window";
-import { CreateGameForm, CreateGameFormData } from "./game-form";
-import { SelectGameForm, SelectGameFormData } from "./select-game-form";
+import { CreateGameForm } from "./game-form";
 import { GameSelector } from "./game-selector";
 import { TabContainer, TabButton, TabPanel } from "./tab-container";
 import { PlayableGameView } from "./gameView/playable";
@@ -11,7 +10,6 @@ declare global {
   interface HTMLElementTagNameMap {
     "modal-window": ModalWindow;
     "create-game-form": CreateGameForm;
-    "select-game-form": SelectGameForm;
     "game-selector": GameSelector;
     "tab-container": TabContainer;
     "tab-button": TabButton;
@@ -24,10 +22,9 @@ declare global {
   interface HTMLElementEventMap {
     "modal-open": CustomEvent<void>;
     "modal-close": CustomEvent<void>;
-    "game-create": CustomEvent<CreateGameFormData>;
+    "game-create": CustomEvent<void>;
     "game-create-cancel": CustomEvent<void>;
-    "game-select": CustomEvent<SelectGameFormData>;
-    "game-select-cancel": CustomEvent<void>;
+    "game-select": CustomEvent<{ serverURL: string; gameName: string }>;
     "open-create-game": CustomEvent<void>;
     "tab-change": CustomEvent<{ tabId: string }>;
     "tab-select": CustomEvent<string>;

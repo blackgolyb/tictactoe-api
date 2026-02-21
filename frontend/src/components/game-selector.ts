@@ -1,12 +1,15 @@
 import { store } from "../core/store";
+import { gameApi } from "../services/gameApi";
 
 /**
  * Game Selector Component
  * Inline selector for switching between games (no modal)
+ * Self-contained: handles store updates internally
  */
 export class GameSelector extends HTMLElement {
   private serverUrlInput: HTMLInputElement;
   private gameNameInput: HTMLInputElement;
+  private unsubscribers: Array<() => void> = [];
 
   constructor() {
     super();
@@ -194,6 +197,29 @@ export class GameSelector extends HTMLElement {
 
   connectedCallback(): void {
     this.loadFromStore();
+    this.setupStoreListeners();
+  }
+
+  disconnectedCallback(): void {
+    this.unsubscribers.forEach((unsub) => unsub());
+    this.unsubscribers = [];
+  }
+
+  private setupStoreListeners(): void {
+    // Update inputs when store changes
+    const unsubServerUrl = store.onChange("serverUrl", (value) => {
+      if (value && this.serverUrlInput.value !== value) {
+        this.serverUrlInput.value = value;
+      }
+    });
+
+    const unsubGameName = store.onChange("gameName", (value) => {
+      if (value && this.gameNameInput.value !== value) {
+        this.gameNameInput.value = value;
+      }
+    });
+
+    this.unsubscribers.push(unsubServerUrl, unsubGameName);
   }
 
   private loadFromStore(): void {
@@ -223,11 +249,22 @@ export class GameSelector extends HTMLElement {
       return;
     }
 
+    const serverUrl = this.serverUrlInput.value;
+    const gameName = this.gameNameInput.value;
+
+    // Update store directly - this will trigger effects in main.ts
+    store.set("serverUrl", serverUrl);
+    store.set("gameName", gameName);
+
+    // Update game API base URL
+    gameApi.setBaseUrl(serverUrl);
+
+    // Dispatch event for UI feedback (optional)
     this.dispatchEvent(
       new CustomEvent("game-select", {
         detail: {
-          serverURL: this.serverUrlInput.value,
-          gameName: this.gameNameInput.value,
+          serverURL: serverUrl,
+          gameName: gameName,
         },
         bubbles: true,
         composed: true,

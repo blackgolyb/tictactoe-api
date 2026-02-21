@@ -13,6 +13,8 @@
     </head>
     <body>
         <div class="content">
+            <game-selector></game-selector>
+
             <tab-container id="game-switcher">
                 <tab-button slot="tabs" for="preview" selected
                     >Preview</tab-button
@@ -33,6 +35,13 @@
                 </tab-panel>
             </tab-container>
         </div>
+
+        <!-- Create Game Modal -->
+        <modal-window id="create-game-modal">
+            <h2 slot="title">Create New Game</h2>
+            <create-game-form></create-game-form>
+        </modal-window>
+
         <script type="module" src="/src/main.ts"></script>
     </body>
 </html>
