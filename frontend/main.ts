@@ -1,6 +1,6 @@
-// var BASE_URL = "https://tic_tac_toe_api.serveo.net";
-var BASE_URL = "http://localhost:8128";
-var DEFAULT_PARAMS = {
+// const BASE_URL = "https://tic_tac_toe_api.serveo.net";
+const BASE_URL = "http://localhost:8128";
+const DEFAULT_PARAMS = {
   name: "default",
   width: 3,
   height: 3,
@@ -8,19 +8,51 @@ var DEFAULT_PARAMS = {
   firstPlayer: "X",
 };
 
+interface GameSettings {
+  width: number;
+  height: number;
+  winning_length: number;
+  first_player: string;
+}
+
+interface RequestData {
+  queryParams?: Record<string, string>;
+  data?: unknown;
+}
+
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+type Route = [HttpMethod, string];
+
+interface Router {
+  getCurrentPlayer: () => Route;
+  getField: (fieldId: number) => Route;
+  getGameSettings: () => Route;
+  makeStep: (fieldId: number) => Route;
+  upsertGame: () => Route;
+}
+
 class GameAPI {
-  constructor(base_url, room) {
+  base: string;
+  room: string;
+  backref: string | undefined;
+
+  constructor(base_url: string, room: string) {
     this.base = base_url;
     this.room = room;
     this.backref = undefined;
   }
 
-  async _fetch(name, params, requestData) {
-    const route = this.getRouter()[name]?.(...params);
-    if (!route) {
+  async _fetch(
+    name: keyof Router,
+    params: any[],
+    requestData?: RequestData,
+  ): Promise<Response> {
+    const routerFunc = this.getRouter()[name];
+    if (!routerFunc) {
       throw new Error(`No such method: ${name}`);
     }
 
+    const route = (routerFunc as any)(...params) as Route;
     const url = new URL(route[1]);
     const method = route[0];
     const queryParams = requestData?.queryParams || {};
@@ -36,11 +68,14 @@ class GameAPI {
     });
   }
 
-  fetchGameSettings(name) {
+  fetchGameSettings(name: string): Promise<Response> {
     return this._fetch("getGameSettings", [name]);
   }
 
-  createOrUpdateGame(name, { width, height, winning_length, first_player }) {
+  createOrUpdateGame(
+    name: string,
+    { width, height, winning_length, first_player }: GameSettings,
+  ): Promise<Response> {
     return this._fetch("upsertGame", [name], {
       data: {
         width,
@@ -51,22 +86,22 @@ class GameAPI {
     });
   }
 
-  makeStep(name, fieldId) {
+  makeStep(name: string, fieldId: number): Promise<Response> {
     return this._fetch("makeStep", [name, fieldId]);
   }
 
-  getRouter() {
+  getRouter(): Router {
     return {
       getCurrentPlayer: () => [
         "GET",
         `${this.base}/api/v1/${this.room}/get_current_player`,
       ],
-      getField: (fieldId) => [
+      getField: (fieldId: number) => [
         "GET",
         `${this.base}/api/v1/${this.room}/get_field/${fieldId}`,
       ],
       getGameSettings: () => ["GET", `${this.base}/api/v1/${this.room}/game`],
-      makeStep: (fieldId) => {
+      makeStep: (fieldId: number) => {
         const url = new URL(
           `${this.base}/api/v1/${this.room}/update_field/${fieldId}`,
         );
@@ -80,27 +115,50 @@ class GameAPI {
   }
 }
 
+interface Tab {
+  switcher: HTMLElement;
+  view: HTMLElement;
+}
+
 class TabSwitcher {
-  constructor(elemId) {
+  elemId: string;
+  tabs: Record<string, Tab>;
+  selected: string | null;
+
+  constructor(elemId: string) {
     this.elemId = elemId;
+    this.tabs = {};
+    this.selected = null;
     this.initElements();
   }
 
-  initElements() {
+  initElements(): void {
     const elem = document.getElementById(this.elemId);
+    if (!elem) {
+      throw new Error(`Element with id ${this.elemId} not found`);
+    }
+
     const tabsElem = elem.querySelector(".tabs-switcher__variants");
     const bodyElem = elem.querySelector(".tabs-switcher__body");
-    const views = Array.from(bodyElem.querySelectorAll(`[data-tab]`));
+    if (!tabsElem || !bodyElem) {
+      throw new Error("Tab switcher elements not found");
+    }
 
-    this.tabs = {};
-    this.selected = null;
-    for (const switcher of tabsElem.children) {
+    const views = Array.from(
+      bodyElem.querySelectorAll(`[data-tab]`),
+    ) as HTMLElement[];
+
+    for (const switcher of Array.from(tabsElem.children) as HTMLElement[]) {
       const name = switcher.dataset.for;
+      if (!name) continue;
+
       if (switcher.dataset.checked !== undefined) {
         this.selected = name;
       }
       const view = views.find((v) => v.dataset.tab === name);
-      this.tabs[name] = { switcher, view };
+      if (view) {
+        this.tabs[name] = { switcher, view };
+      }
     }
 
     if (this.selected === null) {
@@ -108,15 +166,19 @@ class TabSwitcher {
     }
 
     for (const tabName in this.tabs) {
-      this.tabs[tabName].switcher.addEventListener("click", (e) =>
-        this.switch(e.target.dataset.for),
-      );
+      this.tabs[tabName].switcher.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        const tabFor = target.dataset.for;
+        if (tabFor) {
+          this.switch(tabFor);
+        }
+      });
     }
 
     this.switch(this.selected);
   }
 
-  switch(tabName) {
+  switch(tabName: string): void {
     const tabsNames = Object.keys(this.tabs);
     const tab = this.tabs[tabName].view;
     const tabId = tabsNames.indexOf(tabName);
@@ -141,38 +203,60 @@ class TabSwitcher {
   }
 }
 
-var fieldTemplate = document.getElementById("fieldTemplate");
-var fieldsContainer = document.getElementById("fields");
-var codeHTMLContainer = document.getElementById("html-game-code");
-var codeMarkdownContainer = document.getElementById("markdown-game-code");
-var gameMakerForm = document.getElementById("game-maker-form");
+const fieldTemplate = document.getElementById(
+  "fieldTemplate",
+) as HTMLTemplateElement;
+const fieldsContainer = document.getElementById("fields") as HTMLElement;
+const codeHTMLContainer = document.getElementById(
+  "html-game-code",
+) as HTMLElement;
+const codeMarkdownContainer = document.getElementById(
+  "markdown-game-code",
+) as HTMLElement;
+const gameMakerForm = document.getElementById(
+  "game-maker-form",
+) as HTMLFormElement;
 
-function initGameMakerForm(gameAPI) {
+function initGameMakerForm(gameAPI: GameAPI): void {
   gameMakerForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const formData = new FormData(gameMakerForm);
-    const data = Object.fromEntries(formData);
+    const data = Object.fromEntries(formData) as Record<string, string>;
     gameAPI.base = data.serverURL;
     gameAPI.room = data.room;
     const backref = data.redirect.trim();
     gameAPI.backref = backref.length ? backref : undefined;
     updateAllGame(gameAPI);
   });
-  const serverURLField = gameMakerForm.querySelector('[name="serverURL"]');
-  const roomField = gameMakerForm.querySelector('[name="room"]');
-  const redirectField = gameMakerForm.querySelector('[name="redirect"]');
-  const changeHeight = gameMakerForm.querySelector('[name="height"]');
-  const changeWidth = gameMakerForm.querySelector('[name="width"]');
-  changeHeight.value = 3;
-  changeWidth.value = 3;
+  const serverURLField = gameMakerForm.querySelector(
+    '[name="serverURL"]',
+  ) as HTMLInputElement;
+  const roomField = gameMakerForm.querySelector(
+    '[name="room"]',
+  ) as HTMLInputElement;
+  const redirectField = gameMakerForm.querySelector(
+    '[name="redirect"]',
+  ) as HTMLInputElement;
+  const changeHeight = gameMakerForm.querySelector(
+    '[name="height"]',
+  ) as HTMLInputElement;
+  const changeWidth = gameMakerForm.querySelector(
+    '[name="width"]',
+  ) as HTMLInputElement;
+  changeHeight.value = "3";
+  changeWidth.value = "3";
   serverURLField.value = gameAPI.base;
   roomField.value = gameAPI.room;
   redirectField.value = "";
 }
 
-function getMarkdownGameCode(gameAPI, rows = 3, cols = 3) {
+function getMarkdownGameCode(
+  gameAPI: GameAPI,
+  rows: number = 3,
+  cols: number = 3,
+): string {
   const router = gameAPI.getRouter();
-  const getImg = (id) =>
+  const getImg = (id: number): string =>
     `<a href="${router.getField(id)[1]}"><img src="${router.makeStep(id)[1]}" width="100"/></a>`;
   const currentPlayerIndicator = `<img src="${router.getCurrentPlayer()[1]}" height="12"/>`;
 
@@ -185,13 +269,17 @@ function getMarkdownGameCode(gameAPI, rows = 3, cols = 3) {
   return res;
 }
 
-function getHTMLGameCode(gameAPI, rows = 3, cols = 3) {
+function getHTMLGameCode(
+  gameAPI: GameAPI,
+  rows: number = 3,
+  cols: number = 3,
+): string {
   const router = gameAPI.getRouter();
-  const getImg = (id) =>
+  const getImg = (id: number): string =>
     `<a href="${router.getField(id)[1]}"><img src="${router.makeStep(id)[1]}" width="100"/></a>`;
   const currentPlayerIndicator = `<img src="${router.getCurrentPlayer()[1]}" height="12"/>`;
 
-  const template = (fields, currentPlayer) =>
+  const template = (fields: string, currentPlayer: string): string =>
     `\
         <div class="tic-tac-toe">\n\
         <div>\n\
@@ -218,7 +306,7 @@ function getHTMLGameCode(gameAPI, rows = 3, cols = 3) {
   return template(fields, currentPlayerIndicator);
 }
 
-function urlWithTimestamp(url) {
+function urlWithTimestamp(url: string): URL {
   if (!URL.canParse(url)) {
     console.error("failed to find img with this url: ", url);
   }
@@ -227,23 +315,23 @@ function urlWithTimestamp(url) {
   return newUrl;
 }
 
-async function reloadImg(url) {
+async function reloadImg(url: string): Promise<void> {
   const updatedUrl = urlWithTimestamp(url);
   document.body.querySelectorAll(`img[src^='${url}']`).forEach((img) => {
-    img.src = updatedUrl.toString();
+    (img as HTMLImageElement).src = updatedUrl.toString();
   });
 }
 
-function reloadGameMap(gameAPI) {
+function reloadGameMap(gameAPI: GameAPI): void {
   for (let i = 0; i < 9; i++) {
     const url = gameAPI.getRouter().getField(i)[1];
     reloadImg(url);
   }
 }
 
-function createFieldNode(gameAPI, fieldId) {
-  const field = fieldTemplate.content.cloneNode(true);
-  const img = field.querySelector("img");
+function createFieldNode(gameAPI: GameAPI, fieldId: number): DocumentFragment {
+  const field = fieldTemplate.content.cloneNode(true) as DocumentFragment;
+  const img = field.querySelector("img") as HTMLImageElement;
   img.addEventListener("click", () => {
     gameAPI
       .makeStep(gameAPI.room, fieldId)
@@ -254,11 +342,17 @@ function createFieldNode(gameAPI, fieldId) {
         console.error(err);
       });
   });
-  img.src = urlWithTimestamp(gameAPI.getRouter().getField(fieldId)[1]);
+  img.src = urlWithTimestamp(
+    gameAPI.getRouter().getField(fieldId)[1],
+  ).toString();
   return field;
 }
 
-function fillGameMap(gameAPI, rows = 3, cols = 3) {
+function fillGameMap(
+  gameAPI: GameAPI,
+  rows: number = 3,
+  cols: number = 3,
+): void {
   fieldsContainer.innerHTML = "";
   for (let i = 0; i < rows; i++) {
     const row = document.createElement("tr");
@@ -272,17 +366,17 @@ function fillGameMap(gameAPI, rows = 3, cols = 3) {
   }
 }
 
-function fillMarkdownCode(gameAPI) {
+function fillMarkdownCode(gameAPI: GameAPI): void {
   codeMarkdownContainer.textContent = getMarkdownGameCode(gameAPI);
   // hljs.highlightElement(codeMarkdownContainer);
 }
 
-function fillHTMLCode(gameAPI) {
+function fillHTMLCode(gameAPI: GameAPI): void {
   codeHTMLContainer.textContent = getHTMLGameCode(gameAPI);
   // hljs.highlightElement(codeHTMLContainer);
 }
 
-async function fetchGameSettings(gameAPI) {
+async function fetchGameSettings(gameAPI: GameAPI): Promise<Response> {
   return gameAPI.createOrUpdateGame(gameAPI.room, {
     width: 3,
     height: 3,
@@ -291,7 +385,7 @@ async function fetchGameSettings(gameAPI) {
   });
 }
 
-async function updateAllGame(gameAPI) {
+async function updateAllGame(gameAPI: GameAPI): Promise<void> {
   await fetchGameSettings(gameAPI);
   fillGameMap(gameAPI);
   fillMarkdownCode(gameAPI);
@@ -299,7 +393,14 @@ async function updateAllGame(gameAPI) {
 }
 
 class App {
-  constructor(api) {
+  api: GameAPI;
+  name: string;
+  width: number;
+  height: number;
+  winningLength: number;
+  firstPlayer: string;
+
+  constructor(api: GameAPI) {
     this.api = api;
     this.name = DEFAULT_PARAMS.name;
     this.width = DEFAULT_PARAMS.width;
@@ -309,11 +410,11 @@ class App {
   }
 }
 
-function main() {
+function main(): void {
   const gameAPI = new GameAPI(BASE_URL, DEFAULT_PARAMS.name);
   updateAllGame(gameAPI);
   initGameMakerForm(gameAPI);
-  const tabSwitcher = new TabSwitcher("game-switcher");
+  new TabSwitcher("game-switcher");
 }
 
 main();
