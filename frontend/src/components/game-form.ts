@@ -7,7 +7,6 @@ export interface CreateGameFormData {
   width: number;
   height: number;
   winning_length: number;
-  first_player: "X" | "O";
 }
 
 export class CreateGameForm extends HTMLElement {
@@ -207,15 +206,6 @@ export class CreateGameForm extends HTMLElement {
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="first_player">First Player *</label>
-        <select id="first_player" name="first_player" required>
-          <option value="X">X</option>
-          <option value="O">O</option>
-        </select>
-        <small>Which player starts the game</small>
-      </div>
-
       <div class="button-group">
         <button type="submit" class="btn-primary">Create Game</button>
         <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
@@ -272,7 +262,6 @@ export class CreateGameForm extends HTMLElement {
       width: parseInt(formData.get("width") as string),
       height: parseInt(formData.get("height") as string),
       winning_length: parseInt(formData.get("winning_length") as string),
-      first_player: formData.get("first_player") as "X" | "O",
     };
 
     // Validate dimensions
@@ -305,7 +294,6 @@ export class CreateGameForm extends HTMLElement {
         width: data.width,
         height: data.height,
         winning_length: data.winning_length,
-        first_player: data.first_player,
       });
 
       // Update store - this will trigger effects to fetch rules
