@@ -214,7 +214,6 @@ export class MarkdownGameView extends HTMLElement {
     height: number,
   ): string {
     const lines: string[] = [];
-    const serverUrl = store.get<string>("serverUrl");
 
     // Current player indicator with HTML img tag
     const currentPlayerUrl = gameApi.getCurrentPlayerUrl(gameName);
