@@ -1,6 +1,6 @@
 import "./components/modal-window";
 import "./components/game-form";
-import "./components/types";
+import "./components/tab-container";
 import type { GameFormData } from "./components/game-form";
 import type { ModalWindow } from "./components/modal-window";
 import type { GameForm } from "./components/game-form";
@@ -119,94 +119,6 @@ export class GameAPI {
       },
       upsertGame: () => ["POST", `${this.base}/api/v1/${this.room}/game`],
     };
-  }
-}
-
-interface Tab {
-  switcher: HTMLElement;
-  view: HTMLElement;
-}
-
-class TabSwitcher {
-  elemId: string;
-  tabs: Record<string, Tab>;
-  selected: string | null;
-
-  constructor(elemId: string) {
-    this.elemId = elemId;
-    this.tabs = {};
-    this.selected = null;
-    this.initElements();
-  }
-
-  initElements(): void {
-    const elem = document.getElementById(this.elemId);
-    if (!elem) {
-      throw new Error(`Element with id ${this.elemId} not found`);
-    }
-
-    const tabsElem = elem.querySelector(".tabs-switcher__variants");
-    const bodyElem = elem.querySelector(".tabs-switcher__body");
-    if (!tabsElem || !bodyElem) {
-      throw new Error("Tab switcher elements not found");
-    }
-
-    const views = Array.from(
-      bodyElem.querySelectorAll(`[data-tab]`),
-    ) as HTMLElement[];
-
-    for (const switcher of Array.from(tabsElem.children) as HTMLElement[]) {
-      const name = switcher.dataset.for;
-      if (!name) continue;
-
-      if (switcher.dataset.checked !== undefined) {
-        this.selected = name;
-      }
-      const view = views.find((v) => v.dataset.tab === name);
-      if (view) {
-        this.tabs[name] = { switcher, view };
-      }
-    }
-
-    if (this.selected === null) {
-      this.selected = Object.keys(this.tabs)[0];
-    }
-
-    for (const tabName in this.tabs) {
-      this.tabs[tabName].switcher.addEventListener("click", (e) => {
-        const target = e.target as HTMLElement;
-        const tabFor = target.dataset.for;
-        if (tabFor) {
-          this.switch(tabFor);
-        }
-      });
-    }
-
-    this.switch(this.selected);
-  }
-
-  switch(tabName: string): void {
-    const tabsNames = Object.keys(this.tabs);
-    const tab = this.tabs[tabName].view;
-    const tabId = tabsNames.indexOf(tabName);
-
-    for (const [id, name] of tabsNames.entries()) {
-      const current = this.tabs[name].view;
-      if (id < tabId) {
-        current.classList.remove("right");
-        current.classList.remove("mid");
-        current.classList.add("left");
-      } else if (id > tabId) {
-        current.classList.remove("left");
-        current.classList.remove("mid");
-        current.classList.add("right");
-      }
-    }
-
-    tab.classList.remove("right");
-    tab.classList.remove("left");
-    tab.classList.add("mid");
-    this.selected = tabName;
   }
 }
 
@@ -436,7 +348,6 @@ function main(): void {
   const gameAPI = new GameAPI(BASE_URL, DEFAULT_PARAMS.name);
   updateAllGame(gameAPI);
   initGameModal(gameAPI);
-  new TabSwitcher("game-switcher");
 }
 
 main();

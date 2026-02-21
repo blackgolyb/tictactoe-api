@@ -13,36 +13,37 @@
     </head>
     <body>
         <div class="content">
-            <div class="tabs-switcher" id="game-switcher">
-                <div class="tabs-switcher__variants">
-                    <button data-for="preview" data-checked>Preview</button>
-                    <button data-for="code-md">Markdown</button>
-                    <button data-for="code-html">HTML</button>
-                </div>
-                <div id="tabs" class="tabs-switcher__body">
-                    <div data-tab="code-html">
-                        <code id="html-game-code">Some html</code>
-                    </div>
-                    <div data-tab="code-md">
-                        <code id="markdown-game-code">Some md</code>
-                    </div>
-                    <div data-tab="preview">
-                        <table id="game-preview">
-                            <thead>
-                                <tr>
-                                    <th>Tic</th>
-                                    <th>Tac</th>
-                                    <th>Toe</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fields"></tbody>
-                            <template id="fieldTemplate">
-                                <img class="field" />
-                            </template>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <tab-container id="game-switcher">
+                <tab-button slot="tabs" for="preview" selected
+                    >Preview</tab-button
+                >
+                <tab-button slot="tabs" for="code-md">Markdown</tab-button>
+                <tab-button slot="tabs" for="code-html">HTML</tab-button>
+
+                <tab-panel slot="panels" tab-id="preview">
+                    <table id="game-preview">
+                        <thead>
+                            <tr>
+                                <th>Tic</th>
+                                <th>Tac</th>
+                                <th>Toe</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fields"></tbody>
+                        <template id="fieldTemplate">
+                            <img class="field" />
+                        </template>
+                    </table>
+                </tab-panel>
+
+                <tab-panel slot="panels" tab-id="code-md">
+                    <code id="markdown-game-code">Some md</code>
+                </tab-panel>
+
+                <tab-panel slot="panels" tab-id="code-html">
+                    <code id="html-game-code">Some html</code>
+                </tab-panel>
+            </tab-container>
         </div>
         <script type="module" src="/main.ts"></script>
     </body>
