@@ -11,7 +11,9 @@ use tic_tac_toe_api::{
             di::DIContainer,
         },
         presentation::api::{
-            handlers::{create_game, get_current_player, get_field, main_page, update_field},
+            handlers::{
+                create_game, get_current_player, get_field, get_game_rules, main_page, update_field,
+            },
             state::AppState,
         },
     },
@@ -68,6 +70,7 @@ async fn main() -> std::io::Result<()> {
                         .service(create_game)
                         .service(get_current_player)
                         .service(get_field)
+                        .service(get_game_rules)
                         .service(update_field),
                 ),
             )

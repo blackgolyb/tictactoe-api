@@ -1,5 +1,12 @@
 use actix_web::HttpResponse;
 
+/// Creates a JSON response
+pub fn create_json_response(json_content: String) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(json_content)
+}
+
 /// Creates an HTTP response with an image (PNG format)
 pub fn create_image_response(image_content: Vec<u8>) -> HttpResponse {
     HttpResponse::Ok()
