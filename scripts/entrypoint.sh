@@ -1,7 +1,8 @@
 #!/bin/bash
 
 ls -la /app
+chown -R user:user /app/store
 
 echo "$HOST_PROD, $HOST, $PORT"
-autossh -M 0 -R $HOST_PROD:80:$HOST:$PORT serveo.net &
-/app/tic_tac_toe_api
+gosu user autossh -M 0 -R $HOST_PROD:80:$HOST:$PORT serveo.net &
+exec gosu user /app/tic_tac_toe_api

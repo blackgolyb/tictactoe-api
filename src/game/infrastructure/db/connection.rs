@@ -1,10 +1,13 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{Connection, OpenFlags};
+use std::path::Path;
 
 pub type DBConnection = Pool<SqliteConnectionManager>;
 
 pub fn establish_connection(db_path: String) -> DBConnection {
+    ensure_database_parent_exists(&db_path);
+
     let manager = SqliteConnectionManager::file(&db_path)
         .with_flags(
             OpenFlags::SQLITE_OPEN_READ_WRITE
@@ -31,6 +34,8 @@ pub fn establish_connection(db_path: String) -> DBConnection {
 }
 
 pub fn establish_connection_direct(db_path: String) -> Connection {
+    ensure_database_parent_exists(&db_path);
+
     let conn = Connection::open(db_path).expect("Failed to open database connection");
 
     // Enable WAL mode for the direct connection too
@@ -42,4 +47,13 @@ pub fn establish_connection_direct(db_path: String) -> Connection {
     .expect("Failed to set SQLite pragmas");
 
     conn
+}
+
+fn ensure_database_parent_exists(db_path: &str) {
+    if let Some(parent) = Path::new(db_path)
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent).expect("Failed to create database directory");
+    }
 }

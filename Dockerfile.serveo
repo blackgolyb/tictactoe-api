@@ -28,17 +28,15 @@ FROM ubuntu:latest
 
 COPY --from=builder /app/build /app
 
-RUN apt update && apt -y install autossh &&\
+RUN apt update && apt -y install autossh gosu &&\
     useradd -m user &&\
     mkdir -p /home/user/.ssh &&\
-    chown -R user:user /home/user/.ssh
+    chown -R user:user /home/user/.ssh /app
 
 COPY ./certs  /home/user/.ssh
 RUN chmod 666 /home/user/.ssh/id_ed25519 &&\
     echo "Host serveo.net\n\tIdentityFile /home/user/.ssh/id_ed25519\n" >> /home/user/.ssh/config
 
 COPY scripts/entrypoint.sh /app/
-
-USER user
 
 CMD ["sh", "/app/entrypoint.sh"]
