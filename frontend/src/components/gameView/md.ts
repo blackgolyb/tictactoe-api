@@ -1,6 +1,10 @@
-import { store } from "../../core/store";
+import {
+  getCurrentPlayerImageSize,
+  getFieldImageSize,
+  store,
+} from "../../core/store";
 import { gameApi } from "../../services/gameApi";
-import type { Point } from "../../services/gameApi";
+import type { ImageSize, Point } from "../../services/gameApi";
 
 /**
  * Markdown Game View Component
@@ -174,6 +178,16 @@ export class MarkdownGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
+    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
+    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
+    const unsubCurrentPlayerImageWidth = store.onChange(
+      "currentPlayerImageWidth",
+      () => this.render(),
+    );
+    const unsubCurrentPlayerImageHeight = store.onChange(
+      "currentPlayerImageHeight",
+      () => this.render(),
+    );
 
     const unsubRedirectUrl = store.onChange("redirectUrl", () => this.render());
 
@@ -182,6 +196,10 @@ export class MarkdownGameView extends HTMLElement {
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
+      unsubImageWidth,
+      unsubImageHeight,
+      unsubCurrentPlayerImageWidth,
+      unsubCurrentPlayerImageHeight,
       unsubRedirectUrl,
     );
   }
@@ -191,6 +209,8 @@ export class MarkdownGameView extends HTMLElement {
     const serverUrl = store.get<string>("serverUrl");
     const width = store.get<number>("width") || 3;
     const height = store.get<number>("height") || 3;
+    const fieldImageSize = getFieldImageSize();
+    const currentPlayerImageSize = getCurrentPlayerImageSize();
 
     if (!gameName || !serverUrl) {
       this.showError("Game not configured. Please set up the game first.");
@@ -200,7 +220,13 @@ export class MarkdownGameView extends HTMLElement {
     gameApi.setBaseUrl(serverUrl);
 
     try {
-      const markdown = this.generateMarkdown(gameName, width, height);
+      const markdown = this.generateMarkdown(
+        gameName,
+        width,
+        height,
+        fieldImageSize,
+        currentPlayerImageSize,
+      );
       this.displayMarkdown(markdown);
     } catch (error) {
       console.error("Failed to generate Markdown:", error);
@@ -212,13 +238,25 @@ export class MarkdownGameView extends HTMLElement {
     gameName: string,
     width: number,
     height: number,
+    fieldImageSize?: ImageSize,
+    currentPlayerImageSize?: ImageSize,
   ): string {
     const lines: string[] = [];
+    const fieldWidth = fieldImageSize?.width || 100;
+    const fieldHeightAttr = fieldImageSize?.height
+      ? ` height="${fieldImageSize.height}"`
+      : "";
+    const currentPlayerAttrs = currentPlayerImageSize
+      ? ` width="${currentPlayerImageSize.width}" height="${currentPlayerImageSize.height}"`
+      : ` height="12"`;
 
     // Current player indicator with HTML img tag
-    const currentPlayerUrl = gameApi.getCurrentPlayerUrl(gameName);
+    const currentPlayerUrl = gameApi.getCurrentPlayerUrl(
+      gameName,
+      currentPlayerImageSize,
+    );
     lines.push(`Current Player:`);
-    lines.push(`<img src="${currentPlayerUrl}" height="12"/>`);
+    lines.push(`<img src="${currentPlayerUrl}"${currentPlayerAttrs}/>`);
     lines.push("");
 
     // Game board table with HTML tags
@@ -226,14 +264,14 @@ export class MarkdownGameView extends HTMLElement {
       const cells: string[] = [];
       for (let x = 0; x < width; x++) {
         const point: Point = [x, y];
-        const fieldUrl = gameApi.getFieldUrl(gameName, point);
+        const fieldUrl = gameApi.getFieldUrl(gameName, point, fieldImageSize);
         const makeMoveUrl = gameApi.getMakeMoveUrl(gameName, point);
         // Add redirect parameter to make-move URL
         const redirectUrl =
           store.get<string>("redirectUrl") || window.location.href;
         const fullMakeMoveUrl = `${makeMoveUrl}?r=${encodeURIComponent(redirectUrl)}`;
         cells.push(
-          `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" width="100"/></a>`,
+          `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" width="${fieldWidth}"${fieldHeightAttr}/></a>`,
         );
       }
       lines.push(`| ${cells.join(" | ")} |`);

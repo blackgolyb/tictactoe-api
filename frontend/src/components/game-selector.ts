@@ -10,6 +10,10 @@ export class GameSelector extends HTMLElement {
   private serverUrlInput: HTMLInputElement;
   private gameNameInput: HTMLInputElement;
   private redirectUrlInput: HTMLInputElement;
+  private imageWidthInput: HTMLInputElement;
+  private imageHeightInput: HTMLInputElement;
+  private currentPlayerImageWidthInput: HTMLInputElement;
+  private currentPlayerImageHeightInput: HTMLInputElement;
   private unsubscribers: Array<() => void> = [];
 
   constructor() {
@@ -25,6 +29,7 @@ export class GameSelector extends HTMLElement {
 
       .game-selector {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.75rem;
         align-items: end;
         padding: 1rem;
@@ -38,6 +43,11 @@ export class GameSelector extends HTMLElement {
         flex-direction: column;
         gap: 0.25rem;
         flex: 1;
+        min-width: 8rem;
+      }
+
+      .field-group.compact {
+        flex: 0 0 7rem;
       }
 
       .field-group label {
@@ -173,6 +183,76 @@ export class GameSelector extends HTMLElement {
     gameNameGroup.appendChild(gameNameLabel);
     gameNameGroup.appendChild(this.gameNameInput);
 
+    // Board image size fields
+    const imageWidthGroup = document.createElement("div");
+    imageWidthGroup.className = "field-group compact";
+
+    const imageWidthLabel = document.createElement("label");
+    imageWidthLabel.textContent = "Board W";
+    imageWidthLabel.htmlFor = "imageWidth";
+
+    this.imageWidthInput = document.createElement("input");
+    this.imageWidthInput.type = "number";
+    this.imageWidthInput.id = "imageWidth";
+    this.imageWidthInput.placeholder = "100";
+    this.imageWidthInput.min = "1";
+    this.imageWidthInput.max = "512";
+
+    imageWidthGroup.appendChild(imageWidthLabel);
+    imageWidthGroup.appendChild(this.imageWidthInput);
+
+    const imageHeightGroup = document.createElement("div");
+    imageHeightGroup.className = "field-group compact";
+
+    const imageHeightLabel = document.createElement("label");
+    imageHeightLabel.textContent = "Board H";
+    imageHeightLabel.htmlFor = "imageHeight";
+
+    this.imageHeightInput = document.createElement("input");
+    this.imageHeightInput.type = "number";
+    this.imageHeightInput.id = "imageHeight";
+    this.imageHeightInput.placeholder = "100";
+    this.imageHeightInput.min = "1";
+    this.imageHeightInput.max = "512";
+
+    imageHeightGroup.appendChild(imageHeightLabel);
+    imageHeightGroup.appendChild(this.imageHeightInput);
+
+    // Current player image size fields
+    const currentPlayerImageWidthGroup = document.createElement("div");
+    currentPlayerImageWidthGroup.className = "field-group compact";
+
+    const currentPlayerImageWidthLabel = document.createElement("label");
+    currentPlayerImageWidthLabel.textContent = "Player W";
+    currentPlayerImageWidthLabel.htmlFor = "currentPlayerImageWidth";
+
+    this.currentPlayerImageWidthInput = document.createElement("input");
+    this.currentPlayerImageWidthInput.type = "number";
+    this.currentPlayerImageWidthInput.id = "currentPlayerImageWidth";
+    this.currentPlayerImageWidthInput.placeholder = "24";
+    this.currentPlayerImageWidthInput.min = "1";
+    this.currentPlayerImageWidthInput.max = "512";
+
+    currentPlayerImageWidthGroup.appendChild(currentPlayerImageWidthLabel);
+    currentPlayerImageWidthGroup.appendChild(this.currentPlayerImageWidthInput);
+
+    const currentPlayerImageHeightGroup = document.createElement("div");
+    currentPlayerImageHeightGroup.className = "field-group compact";
+
+    const currentPlayerImageHeightLabel = document.createElement("label");
+    currentPlayerImageHeightLabel.textContent = "Player H";
+    currentPlayerImageHeightLabel.htmlFor = "currentPlayerImageHeight";
+
+    this.currentPlayerImageHeightInput = document.createElement("input");
+    this.currentPlayerImageHeightInput.type = "number";
+    this.currentPlayerImageHeightInput.id = "currentPlayerImageHeight";
+    this.currentPlayerImageHeightInput.placeholder = "24";
+    this.currentPlayerImageHeightInput.min = "1";
+    this.currentPlayerImageHeightInput.max = "512";
+
+    currentPlayerImageHeightGroup.appendChild(currentPlayerImageHeightLabel);
+    currentPlayerImageHeightGroup.appendChild(this.currentPlayerImageHeightInput);
+
     // Button group
     const buttonGroup = document.createElement("div");
     buttonGroup.className = "button-group";
@@ -193,6 +273,10 @@ export class GameSelector extends HTMLElement {
     container.appendChild(redirectUrlGroup);
     container.appendChild(serverUrlGroup);
     container.appendChild(gameNameGroup);
+    container.appendChild(imageWidthGroup);
+    container.appendChild(imageHeightGroup);
+    container.appendChild(currentPlayerImageWidthGroup);
+    container.appendChild(currentPlayerImageHeightGroup);
     container.appendChild(buttonGroup);
 
     this.shadowRoot!.appendChild(style);
@@ -214,6 +298,34 @@ export class GameSelector extends HTMLElement {
     });
 
     this.gameNameInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.handleSelect();
+      }
+    });
+
+    this.imageWidthInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.handleSelect();
+      }
+    });
+
+    this.imageHeightInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.handleSelect();
+      }
+    });
+
+    this.currentPlayerImageWidthInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        this.handleSelect();
+      }
+    });
+
+    this.currentPlayerImageHeightInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         this.handleSelect();
@@ -251,13 +363,59 @@ export class GameSelector extends HTMLElement {
       }
     });
 
-    this.unsubscribers.push(unsubRedirectUrl, unsubServerUrl, unsubGameName);
+    const unsubImageWidth = store.onChange("imageWidth", (value) => {
+      const nextValue = value ? value.toString() : "";
+      if (this.imageWidthInput.value !== nextValue) {
+        this.imageWidthInput.value = nextValue;
+      }
+    });
+
+    const unsubImageHeight = store.onChange("imageHeight", (value) => {
+      const nextValue = value ? value.toString() : "";
+      if (this.imageHeightInput.value !== nextValue) {
+        this.imageHeightInput.value = nextValue;
+      }
+    });
+
+    const unsubCurrentPlayerImageWidth = store.onChange(
+      "currentPlayerImageWidth",
+      (value) => {
+        const nextValue = value ? value.toString() : "";
+        if (this.currentPlayerImageWidthInput.value !== nextValue) {
+          this.currentPlayerImageWidthInput.value = nextValue;
+        }
+      },
+    );
+
+    const unsubCurrentPlayerImageHeight = store.onChange(
+      "currentPlayerImageHeight",
+      (value) => {
+        const nextValue = value ? value.toString() : "";
+        if (this.currentPlayerImageHeightInput.value !== nextValue) {
+          this.currentPlayerImageHeightInput.value = nextValue;
+        }
+      },
+    );
+
+    this.unsubscribers.push(
+      unsubRedirectUrl,
+      unsubServerUrl,
+      unsubGameName,
+      unsubImageWidth,
+      unsubImageHeight,
+      unsubCurrentPlayerImageWidth,
+      unsubCurrentPlayerImageHeight,
+    );
   }
 
   private loadFromStore(): void {
     const redirectUrl = store.get<string>("redirectUrl");
     const serverUrl = store.get<string>("serverUrl");
     const gameName = store.get<string>("gameName");
+    const imageWidth = store.get<number>("imageWidth");
+    const imageHeight = store.get<number>("imageHeight");
+    const currentPlayerImageWidth = store.get<number>("currentPlayerImageWidth");
+    const currentPlayerImageHeight = store.get<number>("currentPlayerImageHeight");
 
     if (redirectUrl) {
       this.redirectUrlInput.value = redirectUrl;
@@ -276,28 +434,84 @@ export class GameSelector extends HTMLElement {
     } else {
       this.gameNameInput.value = "default";
     }
+
+    this.imageWidthInput.value = imageWidth ? imageWidth.toString() : "";
+    this.imageHeightInput.value = imageHeight ? imageHeight.toString() : "";
+    this.currentPlayerImageWidthInput.value = currentPlayerImageWidth
+      ? currentPlayerImageWidth.toString()
+      : "";
+    this.currentPlayerImageHeightInput.value = currentPlayerImageHeight
+      ? currentPlayerImageHeight.toString()
+      : "";
   }
 
   private handleSelect(): void {
     if (
       !this.redirectUrlInput.checkValidity() ||
       !this.serverUrlInput.checkValidity() ||
-      !this.gameNameInput.checkValidity()
+      !this.gameNameInput.checkValidity() ||
+      !this.imageWidthInput.checkValidity() ||
+      !this.imageHeightInput.checkValidity() ||
+      !this.currentPlayerImageWidthInput.checkValidity() ||
+      !this.currentPlayerImageHeightInput.checkValidity()
     ) {
       this.redirectUrlInput.reportValidity();
       this.serverUrlInput.reportValidity();
       this.gameNameInput.reportValidity();
+      this.imageWidthInput.reportValidity();
+      this.imageHeightInput.reportValidity();
+      this.currentPlayerImageWidthInput.reportValidity();
+      this.currentPlayerImageHeightInput.reportValidity();
+      return;
+    }
+
+    if (!this.hasValidImageSize(this.imageWidthInput, this.imageHeightInput)) {
+      this.imageWidthInput.setCustomValidity(
+        "Set both board image width and height, or clear both.",
+      );
+      this.imageWidthInput.reportValidity();
+      this.imageWidthInput.setCustomValidity("");
+      return;
+    }
+
+    if (
+      !this.hasValidImageSize(
+        this.currentPlayerImageWidthInput,
+        this.currentPlayerImageHeightInput,
+      )
+    ) {
+      this.currentPlayerImageWidthInput.setCustomValidity(
+        "Set both current-player image width and height, or clear both.",
+      );
+      this.currentPlayerImageWidthInput.reportValidity();
+      this.currentPlayerImageWidthInput.setCustomValidity("");
       return;
     }
 
     const redirectUrl = this.redirectUrlInput.value;
     const serverUrl = this.serverUrlInput.value;
     const gameName = this.gameNameInput.value;
+    const imageWidth = this.imageWidthInput.value
+      ? parseInt(this.imageWidthInput.value)
+      : undefined;
+    const imageHeight = this.imageHeightInput.value
+      ? parseInt(this.imageHeightInput.value)
+      : undefined;
+    const currentPlayerImageWidth = this.currentPlayerImageWidthInput.value
+      ? parseInt(this.currentPlayerImageWidthInput.value)
+      : undefined;
+    const currentPlayerImageHeight = this.currentPlayerImageHeightInput.value
+      ? parseInt(this.currentPlayerImageHeightInput.value)
+      : undefined;
 
     // Update store directly - this will trigger effects in main.ts
     store.set("redirectUrl", redirectUrl);
     store.set("serverUrl", serverUrl);
     store.set("gameName", gameName);
+    store.set("imageWidth", imageWidth);
+    store.set("imageHeight", imageHeight);
+    store.set("currentPlayerImageWidth", currentPlayerImageWidth);
+    store.set("currentPlayerImageHeight", currentPlayerImageHeight);
 
     // Update game API base URL
     gameApi.setBaseUrl(serverUrl);
@@ -309,6 +523,10 @@ export class GameSelector extends HTMLElement {
           redirectUrl: redirectUrl,
           serverURL: serverUrl,
           gameName: gameName,
+          imageWidth: imageWidth,
+          imageHeight: imageHeight,
+          currentPlayerImageWidth: currentPlayerImageWidth,
+          currentPlayerImageHeight: currentPlayerImageHeight,
         },
         bubbles: true,
         composed: true,
@@ -323,6 +541,16 @@ export class GameSelector extends HTMLElement {
         composed: true,
       }),
     );
+  }
+
+  private hasValidImageSize(
+    widthInput: HTMLInputElement,
+    heightInput: HTMLInputElement,
+  ): boolean {
+    const hasWidth = widthInput.value !== "";
+    const hasHeight = heightInput.value !== "";
+
+    return hasWidth === hasHeight;
   }
 }
 

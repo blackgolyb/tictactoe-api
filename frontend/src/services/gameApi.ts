@@ -6,6 +6,11 @@
 export type Player = "X" | "O";
 export type Point = [number, number];
 
+export interface ImageSize {
+  width: number;
+  height: number;
+}
+
 export interface GameRules {
   game_size: [number, number];
   winning_length: number;
@@ -69,16 +74,22 @@ export class GameApiService {
   /**
    * Get URL for current player image
    */
-  getCurrentPlayerUrl(room: string): string {
-    return `${this.baseUrl}/api/v1/${room}/get-current-player`;
+  getCurrentPlayerUrl(room: string, size?: ImageSize): string {
+    return this.withImageSize(
+      `${this.baseUrl}/api/v1/${room}/get-current-player`,
+      size,
+    );
   }
 
   /**
    * Get URL for a specific field image
    */
-  getFieldUrl(room: string, field: Point): string {
+  getFieldUrl(room: string, field: Point, size?: ImageSize): string {
     const fieldId = this.pointToFieldId(field);
-    return `${this.baseUrl}/api/v1/${room}/get-field/${fieldId}`;
+    return this.withImageSize(
+      `${this.baseUrl}/api/v1/${room}/get-field/${fieldId}`,
+      size,
+    );
   }
 
   /**
@@ -137,8 +148,8 @@ export class GameApiService {
   /**
    * Get current player image as blob
    */
-  async getCurrentPlayerImage(room: string): Promise<Blob> {
-    const response = await fetch(this.getCurrentPlayerUrl(room));
+  async getCurrentPlayerImage(room: string, size?: ImageSize): Promise<Blob> {
+    const response = await fetch(this.getCurrentPlayerUrl(room, size));
     if (!response.ok) {
       throw new Error(`Failed to get current player: ${response.statusText}`);
     }
@@ -148,8 +159,12 @@ export class GameApiService {
   /**
    * Get field image as blob
    */
-  async getFieldImage(room: string, field: Point): Promise<Blob> {
-    const response = await fetch(this.getFieldUrl(room, field));
+  async getFieldImage(
+    room: string,
+    field: Point,
+    size?: ImageSize,
+  ): Promise<Blob> {
+    const response = await fetch(this.getFieldUrl(room, field, size));
     if (!response.ok) {
       throw new Error(`Failed to get field image: ${response.statusText}`);
     }
@@ -259,6 +274,17 @@ export class GameApiService {
     return urlObj.toString();
   }
 
+  withImageSize(url: string, size?: ImageSize): string {
+    if (!size) {
+      return url;
+    }
+
+    const urlObj = new URL(url);
+    urlObj.searchParams.set("w", size.width.toString());
+    urlObj.searchParams.set("h", size.height.toString());
+    return urlObj.toString();
+  }
+
   /**
    * Preload an image URL
    */
@@ -278,16 +304,17 @@ export class GameApiService {
     room: string,
     width: number,
     height: number,
+    size?: ImageSize,
   ): Promise<void> {
     const promises: Promise<void>[] = [];
 
     // Preload current player
-    promises.push(this.preloadImage(this.getCurrentPlayerUrl(room)));
+    promises.push(this.preloadImage(this.getCurrentPlayerUrl(room, size)));
 
     // Preload all fields
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        promises.push(this.preloadImage(this.getFieldUrl(room, [x, y])));
+        promises.push(this.preloadImage(this.getFieldUrl(room, [x, y], size)));
       }
     }
 

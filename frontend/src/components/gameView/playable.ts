@@ -1,6 +1,10 @@
-import { store } from "../../core/store";
+import {
+  getCurrentPlayerImageSize,
+  getFieldImageSize,
+  store,
+} from "../../core/store";
 import { gameApi } from "../../services/gameApi";
-import type { Point } from "../../services/gameApi";
+import type { ImageSize, Point } from "../../services/gameApi";
 
 /**
  * Playable Game View Component
@@ -146,12 +150,26 @@ export class PlayableGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
+    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
+    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
+    const unsubCurrentPlayerImageWidth = store.onChange(
+      "currentPlayerImageWidth",
+      () => this.render(),
+    );
+    const unsubCurrentPlayerImageHeight = store.onChange(
+      "currentPlayerImageHeight",
+      () => this.render(),
+    );
 
     this.unsubscribers.push(
       unsubGameName,
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
+      unsubImageWidth,
+      unsubImageHeight,
+      unsubCurrentPlayerImageWidth,
+      unsubCurrentPlayerImageHeight,
     );
   }
 
@@ -160,6 +178,8 @@ export class PlayableGameView extends HTMLElement {
     const serverUrl = store.get<string>("serverUrl");
     const width = store.get<number>("width") || 3;
     const height = store.get<number>("height") || 3;
+    const fieldImageSize = getFieldImageSize();
+    const currentPlayerImageSize = getCurrentPlayerImageSize();
 
     if (!gameName || !serverUrl) {
       this.showError("Game not configured. Please set up the game first.");
@@ -170,18 +190,28 @@ export class PlayableGameView extends HTMLElement {
     gameApi.setBaseUrl(serverUrl);
 
     try {
-      await this.renderCurrentPlayer(gameName);
-      await this.renderGameBoard(gameName, width, height);
+      await this.renderCurrentPlayer(gameName, currentPlayerImageSize);
+      await this.renderGameBoard(gameName, width, height, fieldImageSize);
     } catch (error) {
       console.error("Failed to render game:", error);
       this.showError("Failed to load game. Please try again.");
     }
   }
 
-  private async renderCurrentPlayer(gameName: string): Promise<void> {
+  private async renderCurrentPlayer(
+    gameName: string,
+    imageSize?: ImageSize,
+  ): Promise<void> {
+    const currentPlayerUrl = gameApi.withTimestamp(
+      gameApi.getCurrentPlayerUrl(gameName, imageSize),
+    );
+    const imageStyle = imageSize
+      ? ` style="width: ${imageSize.width}px; height: ${imageSize.height}px;"`
+      : "";
+
     this.currentPlayerIndicator.innerHTML = `
       <span>Current Player:</span>
-      <img src="${gameApi.withTimestamp(gameApi.getCurrentPlayerUrl(gameName))}" alt="Current player" />
+      <img src="${currentPlayerUrl}"${imageStyle} alt="Current player" />
     `;
   }
 
@@ -189,26 +219,38 @@ export class PlayableGameView extends HTMLElement {
     gameName: string,
     width: number,
     height: number,
+    imageSize?: ImageSize,
   ): Promise<void> {
-    this.gameBoard.style.gridTemplateColumns = `repeat(${width}, 100px)`;
+    const fieldWidth = imageSize?.width || 100;
+    this.gameBoard.style.gridTemplateColumns = `repeat(${width}, ${fieldWidth}px)`;
     this.gameBoard.innerHTML = "";
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const field = this.createFieldElement(gameName, [x, y]);
+        const field = this.createFieldElement(gameName, [x, y], imageSize);
         this.gameBoard.appendChild(field);
       }
     }
   }
 
-  private createFieldElement(gameName: string, point: Point): HTMLDivElement {
+  private createFieldElement(
+    gameName: string,
+    point: Point,
+    imageSize?: ImageSize,
+  ): HTMLDivElement {
     const field = document.createElement("div");
     field.className = "field";
     field.setAttribute("data-x", point[0].toString());
     field.setAttribute("data-y", point[1].toString());
+    if (imageSize) {
+      field.style.width = `${imageSize.width}px`;
+      field.style.height = `${imageSize.height}px`;
+    }
 
     const img = document.createElement("img");
-    img.src = gameApi.withTimestamp(gameApi.getFieldUrl(gameName, point));
+    img.src = gameApi.withTimestamp(
+      gameApi.getFieldUrl(gameName, point, imageSize),
+    );
     img.alt = `Field ${point[0]},${point[1]}`;
     field.appendChild(img);
 
@@ -238,9 +280,11 @@ export class PlayableGameView extends HTMLElement {
   private async reloadBoard(gameName: string): Promise<void> {
     // Reload current player indicator
     const currentPlayerImg = this.currentPlayerIndicator.querySelector("img");
+    const fieldImageSize = getFieldImageSize();
+    const currentPlayerImageSize = getCurrentPlayerImageSize();
     if (currentPlayerImg) {
       (currentPlayerImg as HTMLImageElement).src = gameApi.withTimestamp(
-        gameApi.getCurrentPlayerUrl(gameName),
+        gameApi.getCurrentPlayerUrl(gameName, currentPlayerImageSize),
       );
     }
 
@@ -251,7 +295,9 @@ export class PlayableGameView extends HTMLElement {
       const y = parseInt(field.getAttribute("data-y") || "0");
       const img = field.querySelector("img") as HTMLImageElement;
       if (img) {
-        img.src = gameApi.withTimestamp(gameApi.getFieldUrl(gameName, [x, y]));
+        img.src = gameApi.withTimestamp(
+          gameApi.getFieldUrl(gameName, [x, y], fieldImageSize),
+        );
       }
     });
   }

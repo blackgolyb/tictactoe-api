@@ -39,6 +39,32 @@ fn parse_field_id(field_id: &str) -> Option<Point> {
     Some((x, y))
 }
 
+fn parse_image_size(req: &HttpRequest) -> Result<Option<(u32, u32)>, HttpResponse> {
+    let qs = QString::from(req.query_string());
+    let width = qs.get("w");
+    let height = qs.get("h");
+
+    match (width, height) {
+        (None, None) => Ok(None),
+        (Some(w), Some(h)) => {
+            let width = w.parse::<u32>().ok().filter(|width| *width > 0);
+            let height = h.parse::<u32>().ok().filter(|height| *height > 0);
+
+            match (width, height) {
+                (Some(width), Some(height)) => Ok(Some((width, height))),
+                _ => Err(create_error_response(
+                    "Invalid image size",
+                    actix_web::http::StatusCode::BAD_REQUEST,
+                )),
+            }
+        }
+        _ => Err(create_error_response(
+            "Both 'w' and 'h' query parameters are required for image resize",
+            actix_web::http::StatusCode::BAD_REQUEST,
+        )),
+    }
+}
+
 /// GET / - Serve the main HTML page
 #[get("/")]
 pub async fn main_page() -> impl Responder {
@@ -61,14 +87,22 @@ pub async fn main_page() -> impl Responder {
 pub async fn get_current_player(
     state: web::Data<AppState>,
     room: web::Path<String>,
+    req: HttpRequest,
 ) -> impl Responder {
     let game_name = room.into_inner();
+    let size = match parse_image_size(&req) {
+        Ok(size) => size,
+        Err(response) => return response,
+    };
 
     // Resolve use case from DI container
     let mut use_case = resolve_visualize_current_field_use_case(&state.container);
 
     // Create input and run use case
-    let input = VisualizeCurrentFieldInput { name: game_name };
+    let input = VisualizeCurrentFieldInput {
+        name: game_name,
+        size,
+    };
 
     match use_case.run(input) {
         Ok(_) => {
@@ -92,8 +126,13 @@ pub async fn get_current_player(
 pub async fn get_field(
     state: web::Data<AppState>,
     path: web::Path<(String, String)>,
+    req: HttpRequest,
 ) -> impl Responder {
     let (game_name, field_id_str) = path.into_inner();
+    let size = match parse_image_size(&req) {
+        Ok(size) => size,
+        Err(response) => return response,
+    };
 
     // Parse field_id to Point
     let field = match parse_field_id(&field_id_str) {
@@ -113,6 +152,7 @@ pub async fn get_field(
     let input = VisualizeBoardFieldInput {
         name: game_name,
         field,
+        size,
     };
 
     match use_case.run(input) {

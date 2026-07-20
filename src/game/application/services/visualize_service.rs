@@ -21,7 +21,22 @@ impl VisualizeService {
 }
 
 impl VisualizeService {
-    pub fn visualize_current_player(&self, game: &Game) -> Result<Vec<u8>, ()> {
+    fn get_image(&self, asset: &str, size: Option<(u32, u32)>) -> Result<Vec<u8>, ()> {
+        let asset = match size {
+            Some(size) => self.assets.get_resized_image(asset, size),
+            None => self.assets.get(asset),
+        }?;
+
+        match asset {
+            Asset::Image(a) => Ok(a),
+        }
+    }
+
+    pub fn visualize_current_player(
+        &self,
+        game: &Game,
+        size: Option<(u32, u32)>,
+    ) -> Result<Vec<u8>, ()> {
         let is_game_over = game.check_game_status() != GameState::InProgress;
 
         let asset = if is_game_over {
@@ -33,13 +48,15 @@ impl VisualizeService {
             }
         };
 
-        match self.assets.get(asset) {
-            Ok(Asset::Image(a)) => Ok(a),
-            _ => Err(()),
-        }
+        self.get_image(asset, size)
     }
 
-    pub fn visualize_field(&self, game: &Game, field_coordinates: Point) -> Result<Vec<u8>, ()> {
+    pub fn visualize_field(
+        &self,
+        game: &Game,
+        field_coordinates: Point,
+        size: Option<(u32, u32)>,
+    ) -> Result<Vec<u8>, ()> {
         let (x, y) = field_coordinates;
         let field = game.board().get(x as usize, y as usize);
         let status = game.check_game_status();
@@ -62,9 +79,6 @@ impl VisualizeService {
             FieldState::Occupied(Player::X) => format!("X{postfix}"),
         };
 
-        match self.assets.get(&asset) {
-            Ok(Asset::Image(a)) => Ok(a),
-            _ => Err(()),
-        }
+        self.get_image(&asset, size)
     }
 }

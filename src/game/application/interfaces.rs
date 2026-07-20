@@ -11,4 +11,5 @@ pub enum Asset {
 
 pub trait AssetsAdapter {
     fn get(&self, asset: &str) -> Result<Asset, ()>;
+    fn get_resized_image(&self, asset: &str, size: (u32, u32)) -> Result<Asset, ()>;
 }

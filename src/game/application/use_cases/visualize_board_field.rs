@@ -8,6 +8,7 @@ use_case! {
     Input {
         name: String,
         field: Point,
+        size: Option<(u32, u32)>,
     }
 
     State {
@@ -43,9 +44,10 @@ use_case! {
         visualize_field |story: &mut Self| {
             let input = story.input();
             let field = input.field;
+            let size = input.size;
             let game = story.state.game.as_ref().ok_or(Error::Fail)?;
 
-            let field_img = story.visualizer.visualize_field(game, field).or(Err(Error::Fail))?;
+            let field_img = story.visualizer.visualize_field(game, field, size).or(Err(Error::Fail))?;
 
             story.state.field_img = Some(field_img);
             Ok(())

@@ -1,6 +1,10 @@
-import { store } from "../../core/store";
+import {
+  getCurrentPlayerImageSize,
+  getFieldImageSize,
+  store,
+} from "../../core/store";
 import { gameApi } from "../../services/gameApi";
-import type { Point } from "../../services/gameApi";
+import type { ImageSize, Point } from "../../services/gameApi";
 
 /**
  * HTML Game View Component
@@ -174,12 +178,26 @@ export class HtmlGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
+    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
+    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
+    const unsubCurrentPlayerImageWidth = store.onChange(
+      "currentPlayerImageWidth",
+      () => this.render(),
+    );
+    const unsubCurrentPlayerImageHeight = store.onChange(
+      "currentPlayerImageHeight",
+      () => this.render(),
+    );
 
     this.unsubscribers.push(
       unsubGameName,
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
+      unsubImageWidth,
+      unsubImageHeight,
+      unsubCurrentPlayerImageWidth,
+      unsubCurrentPlayerImageHeight,
     );
   }
 
@@ -188,6 +206,8 @@ export class HtmlGameView extends HTMLElement {
     const serverUrl = store.get<string>("serverUrl");
     const width = store.get<number>("width") || 3;
     const height = store.get<number>("height") || 3;
+    const fieldImageSize = getFieldImageSize();
+    const currentPlayerImageSize = getCurrentPlayerImageSize();
 
     if (!gameName || !serverUrl) {
       this.showError("Game not configured. Please set up the game first.");
@@ -197,7 +217,13 @@ export class HtmlGameView extends HTMLElement {
     gameApi.setBaseUrl(serverUrl);
 
     try {
-      const html = this.generateHtml(gameName, width, height);
+      const html = this.generateHtml(
+        gameName,
+        width,
+        height,
+        fieldImageSize,
+        currentPlayerImageSize,
+      );
       this.displayHtml(html);
     } catch (error) {
       console.error("Failed to generate HTML:", error);
@@ -209,8 +235,19 @@ export class HtmlGameView extends HTMLElement {
     gameName: string,
     width: number,
     height: number,
+    fieldImageSize?: ImageSize,
+    currentPlayerImageSize?: ImageSize,
   ): string {
-    const currentPlayerUrl = gameApi.getCurrentPlayerUrl(gameName);
+    const currentPlayerUrl = gameApi.getCurrentPlayerUrl(
+      gameName,
+      currentPlayerImageSize,
+    );
+    const currentPlayerAttrs = currentPlayerImageSize
+      ? ` width="${currentPlayerImageSize.width}" height="${currentPlayerImageSize.height}"`
+      : ` height="24"`;
+    const fieldWidth = fieldImageSize?.width || 100;
+    const fieldHeight = fieldImageSize?.height;
+    const fieldHeightAttr = fieldHeight ? ` height="${fieldHeight}"` : "";
 
     // Generate table rows
     const rows: string[] = [];
@@ -218,11 +255,11 @@ export class HtmlGameView extends HTMLElement {
       const cells: string[] = [];
       for (let x = 0; x < width; x++) {
         const point: Point = [x, y];
-        const fieldUrl = gameApi.getFieldUrl(gameName, point);
+        const fieldUrl = gameApi.getFieldUrl(gameName, point, fieldImageSize);
         const makeMoveUrl = gameApi.getMakeMoveUrl(gameName, point);
         cells.push(`      <td>
         <a href="${makeMoveUrl}">
-          <img src="${fieldUrl}" width="100" alt="Field ${x},${y}" />
+          <img src="${fieldUrl}" width="${fieldWidth}"${fieldHeightAttr} alt="Field ${x},${y}" />
         </a>
       </td>`);
       }
@@ -234,7 +271,7 @@ ${cells.join("\n")}
     return `<div class="tic-tac-toe-game">
   <div class="current-player">
     <span>Current Player: </span>
-    <img src="${currentPlayerUrl}" height="24" alt="Current player" />
+    <img src="${currentPlayerUrl}"${currentPlayerAttrs} alt="Current player" />
   </div>
   <table class="game-board">
     <tbody>
