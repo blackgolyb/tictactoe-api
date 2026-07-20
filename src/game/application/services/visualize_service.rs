@@ -1,7 +1,7 @@
 use teloc::inject;
 
 use crate::game::{
-    application::interfaces::{Asset, AssetsAdapter},
+    application::interfaces::{Asset, AssetsAdapter, ImageSize},
     domain::{
         aggregates::Game,
         models::{FieldState, GameState, Player},
@@ -21,7 +21,7 @@ impl VisualizeService {
 }
 
 impl VisualizeService {
-    fn get_image(&self, asset: &str, size: Option<(u32, u32)>) -> Result<Vec<u8>, ()> {
+    fn get_image(&self, asset: &str, size: Option<ImageSize>) -> Result<Vec<u8>, ()> {
         let asset = match size {
             Some(size) => self.assets.get_resized_image(asset, size),
             None => self.assets.get(asset),
@@ -35,7 +35,7 @@ impl VisualizeService {
     pub fn visualize_current_player(
         &self,
         game: &Game,
-        size: Option<(u32, u32)>,
+        size: Option<ImageSize>,
     ) -> Result<Vec<u8>, ()> {
         let is_game_over = game.check_game_status() != GameState::InProgress;
 
@@ -55,7 +55,7 @@ impl VisualizeService {
         &self,
         game: &Game,
         field_coordinates: Point,
-        size: Option<(u32, u32)>,
+        size: Option<ImageSize>,
     ) -> Result<Vec<u8>, ()> {
         let (x, y) = field_coordinates;
         let field = game.board().get(x as usize, y as usize);

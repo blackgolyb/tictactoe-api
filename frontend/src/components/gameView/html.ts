@@ -178,14 +178,9 @@ export class HtmlGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
-    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
-    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
-    const unsubCurrentPlayerImageWidth = store.onChange(
-      "currentPlayerImageWidth",
-      () => this.render(),
-    );
-    const unsubCurrentPlayerImageHeight = store.onChange(
-      "currentPlayerImageHeight",
+    const unsubImageSize = store.onChange("imageSize", () => this.render());
+    const unsubCurrentPlayerImageSize = store.onChange(
+      "currentPlayerImageSize",
       () => this.render(),
     );
 
@@ -194,10 +189,8 @@ export class HtmlGameView extends HTMLElement {
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
-      unsubImageWidth,
-      unsubImageHeight,
-      unsubCurrentPlayerImageWidth,
-      unsubCurrentPlayerImageHeight,
+      unsubImageSize,
+      unsubCurrentPlayerImageSize,
     );
   }
 
@@ -243,11 +236,9 @@ export class HtmlGameView extends HTMLElement {
       currentPlayerImageSize,
     );
     const currentPlayerAttrs = currentPlayerImageSize
-      ? ` width="${currentPlayerImageSize.width}" height="${currentPlayerImageSize.height}"`
+      ? ` height="${currentPlayerImageSize.height}"`
       : ` height="24"`;
-    const fieldWidth = fieldImageSize?.width || 100;
-    const fieldHeight = fieldImageSize?.height;
-    const fieldHeightAttr = fieldHeight ? ` height="${fieldHeight}"` : "";
+    const fieldHeight = fieldImageSize?.height || 100;
 
     // Generate table rows
     const rows: string[] = [];
@@ -259,7 +250,7 @@ export class HtmlGameView extends HTMLElement {
         const makeMoveUrl = gameApi.getMakeMoveUrl(gameName, point);
         cells.push(`      <td>
         <a href="${makeMoveUrl}">
-          <img src="${fieldUrl}" width="${fieldWidth}"${fieldHeightAttr} alt="Field ${x},${y}" />
+          <img src="${fieldUrl}" height="${fieldHeight}" alt="Field ${x},${y}" />
         </a>
       </td>`);
       }

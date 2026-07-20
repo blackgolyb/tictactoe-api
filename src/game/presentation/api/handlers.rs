@@ -11,6 +11,7 @@ use crate::game::{
         visualize_board_field::Input as VisualizeBoardFieldInput,
         visualize_current_field::Input as VisualizeCurrentFieldInput,
     },
+    application::interfaces::ImageSize,
     domain::{models::Player, value_objects::Point},
     infrastructure::di::{
         resolve_create_game_use_case, resolve_get_game_rules_use_case, resolve_make_move_use_case,
@@ -39,30 +40,35 @@ fn parse_field_id(field_id: &str) -> Option<Point> {
     Some((x, y))
 }
 
-fn parse_image_size(req: &HttpRequest) -> Result<Option<(u32, u32)>, HttpResponse> {
+fn parse_image_size(req: &HttpRequest) -> Result<Option<ImageSize>, HttpResponse> {
     let qs = QString::from(req.query_string());
     let width = qs.get("w");
     let height = qs.get("h");
 
     match (width, height) {
         (None, None) => Ok(None),
-        (Some(w), Some(h)) => {
-            let width = w.parse::<u32>().ok().filter(|width| *width > 0);
-            let height = h.parse::<u32>().ok().filter(|height| *height > 0);
+        _ => {
+            let width = match width {
+                Some(width) => Some(parse_image_dimension(width)?),
+                None => None,
+            };
+            let height = match height {
+                Some(height) => Some(parse_image_dimension(height)?),
+                None => None,
+            };
 
-            match (width, height) {
-                (Some(width), Some(height)) => Ok(Some((width, height))),
-                _ => Err(create_error_response(
-                    "Invalid image size",
-                    actix_web::http::StatusCode::BAD_REQUEST,
-                )),
-            }
+            Ok(Some(ImageSize { width, height }))
         }
-        _ => Err(create_error_response(
-            "Both 'w' and 'h' query parameters are required for image resize",
-            actix_web::http::StatusCode::BAD_REQUEST,
-        )),
     }
+}
+
+fn parse_image_dimension(value: &str) -> Result<u32, HttpResponse> {
+    value.parse::<u32>().ok().filter(|value| *value > 0).ok_or(
+        create_error_response(
+            "Invalid image size",
+            actix_web::http::StatusCode::BAD_REQUEST,
+        ),
+    )
 }
 
 /// GET / - Serve the main HTML page

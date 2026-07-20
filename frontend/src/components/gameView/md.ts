@@ -178,14 +178,9 @@ export class MarkdownGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
-    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
-    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
-    const unsubCurrentPlayerImageWidth = store.onChange(
-      "currentPlayerImageWidth",
-      () => this.render(),
-    );
-    const unsubCurrentPlayerImageHeight = store.onChange(
-      "currentPlayerImageHeight",
+    const unsubImageSize = store.onChange("imageSize", () => this.render());
+    const unsubCurrentPlayerImageSize = store.onChange(
+      "currentPlayerImageSize",
       () => this.render(),
     );
 
@@ -196,10 +191,8 @@ export class MarkdownGameView extends HTMLElement {
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
-      unsubImageWidth,
-      unsubImageHeight,
-      unsubCurrentPlayerImageWidth,
-      unsubCurrentPlayerImageHeight,
+      unsubImageSize,
+      unsubCurrentPlayerImageSize,
       unsubRedirectUrl,
     );
   }
@@ -242,13 +235,8 @@ export class MarkdownGameView extends HTMLElement {
     currentPlayerImageSize?: ImageSize,
   ): string {
     const lines: string[] = [];
-    const fieldWidth = fieldImageSize?.width || 100;
-    const fieldHeightAttr = fieldImageSize?.height
-      ? ` height="${fieldImageSize.height}"`
-      : "";
-    const currentPlayerAttrs = currentPlayerImageSize
-      ? ` width="${currentPlayerImageSize.width}" height="${currentPlayerImageSize.height}"`
-      : ` height="12"`;
+    const fieldHeight = fieldImageSize?.height || 100;
+    const currentPlayerHeight = currentPlayerImageSize?.height || 12;
 
     // Current player indicator with HTML img tag
     const currentPlayerUrl = gameApi.getCurrentPlayerUrl(
@@ -256,7 +244,7 @@ export class MarkdownGameView extends HTMLElement {
       currentPlayerImageSize,
     );
     lines.push(`Current Player:`);
-    lines.push(`<img src="${currentPlayerUrl}"${currentPlayerAttrs}/>`);
+    lines.push(`<img src="${currentPlayerUrl}" height="${currentPlayerHeight}"/>`);
     lines.push("");
 
     // Game board table with HTML tags
@@ -271,7 +259,7 @@ export class MarkdownGameView extends HTMLElement {
           store.get<string>("redirectUrl") || window.location.href;
         const fullMakeMoveUrl = `${makeMoveUrl}?r=${encodeURIComponent(redirectUrl)}`;
         cells.push(
-          `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" width="${fieldWidth}"${fieldHeightAttr}/></a>`,
+          `<a href="${fullMakeMoveUrl}"><img src="${fieldUrl}" height="${fieldHeight}"/></a>`,
         );
       }
       lines.push(`| ${cells.join(" | ")} |`);

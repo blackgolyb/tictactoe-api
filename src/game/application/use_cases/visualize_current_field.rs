@@ -1,5 +1,8 @@
 use crate::game::{
-    application::{interfaces::GameRepository, services::visualize_service::VisualizeService},
+    application::{
+        interfaces::{GameRepository, ImageSize},
+        services::visualize_service::VisualizeService,
+    },
     domain::aggregates::Game,
 };
 use crate::use_case;
@@ -7,7 +10,7 @@ use crate::use_case;
 use_case! {
     Input {
         name: String,
-        size: Option<(u32, u32)>,
+        size: Option<ImageSize>,
     }
 
     State {

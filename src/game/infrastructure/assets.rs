@@ -1,6 +1,6 @@
 use std::{io::Cursor, path::PathBuf};
 
-use crate::game::application::interfaces::{Asset, AssetsAdapter};
+use crate::game::application::interfaces::{Asset, AssetsAdapter, ImageSize};
 
 pub struct AssetsLoaderFromDisk {
     store: DiskAssetsStore,
@@ -20,13 +20,10 @@ enum AssetType {
     Image,
 }
 
-fn resize_image(img: Vec<u8>, size: (u32, u32)) -> Result<Vec<u8>, ()> {
-    if size.0 == 0 || size.1 == 0 {
-        return Err(());
-    }
-
+fn resize_image(img: Vec<u8>, size: ImageSize) -> Result<Vec<u8>, ()> {
     let image = image::load_from_memory(&img).or(Err(()))?;
-    let resized = image.resize_exact(size.0, size.1, image::imageops::FilterType::Lanczos3);
+    let (width, height) = resolve_image_size(image.width(), image.height(), size)?;
+    let resized = image.resize_exact(width, height, image::imageops::FilterType::Lanczos3);
     let mut output = Cursor::new(Vec::new());
 
     resized
@@ -36,7 +33,43 @@ fn resize_image(img: Vec<u8>, size: (u32, u32)) -> Result<Vec<u8>, ()> {
     Ok(output.into_inner())
 }
 
-fn resize_asset_image(asset: Asset, size: (u32, u32)) -> Result<Asset, ()> {
+fn resolve_image_size(
+    original_width: u32,
+    original_height: u32,
+    size: ImageSize,
+) -> Result<(u32, u32), ()> {
+    if matches!(size.width, Some(0)) || matches!(size.height, Some(0)) {
+        return Err(());
+    }
+
+    match (size.width, size.height) {
+        (Some(width), Some(height)) => Ok((width, height)),
+        (Some(width), None) => Ok((
+            width,
+            scale_dimension(original_height, width, original_width)?,
+        )),
+        (None, Some(height)) => Ok((
+            scale_dimension(original_width, height, original_height)?,
+            height,
+        )),
+        (None, None) => Err(()),
+    }
+}
+
+fn scale_dimension(original: u32, requested: u32, requested_original: u32) -> Result<u32, ()> {
+    if original == 0 || requested == 0 || requested_original == 0 {
+        return Err(());
+    }
+
+    let scaled = (original as u64)
+        .checked_mul(requested as u64)
+        .ok_or(())?
+        / requested_original as u64;
+
+    u32::try_from(scaled.max(1)).or(Err(()))
+}
+
+fn resize_asset_image(asset: Asset, size: ImageSize) -> Result<Asset, ()> {
     match asset {
         Asset::Image(img) => Ok(Asset::Image(resize_image(img, size)?)),
     }
@@ -104,11 +137,20 @@ impl DiskAssetsCache {
         Self { cache_dir }
     }
 
-    fn get_cache_path(&self, asset: &str, size: (u32, u32)) -> PathBuf {
-        self.cache_dir.join(format!("{}_{}_{}", size.0, size.1, asset))
+    fn get_cache_path(&self, asset: &str, size: ImageSize) -> PathBuf {
+        self.cache_dir.join(format!(
+            "{}_{}_{}",
+            size.width
+                .map(|width| width.to_string())
+                .unwrap_or_else(|| "auto".to_owned()),
+            size.height
+                .map(|height| height.to_string())
+                .unwrap_or_else(|| "auto".to_owned()),
+            asset
+        ))
     }
 
-    fn set(&self, asset_name: &str, size: (u32, u32), asset: &Asset) -> Result<(), ()> {
+    fn set(&self, asset_name: &str, size: ImageSize, asset: &Asset) -> Result<(), ()> {
         let cache_path = self.get_cache_path(asset_name, size);
 
         std::fs::create_dir_all(&self.cache_dir).or(Err(()))?;
@@ -123,7 +165,7 @@ impl DiskAssetsCache {
         &self,
         asset: &str,
         asset_type: AssetType,
-        size: (u32, u32),
+        size: ImageSize,
     ) -> Result<Option<Asset>, ()> {
         let path = self.get_cache_path(asset, size);
         if !path.is_file() {
@@ -139,7 +181,11 @@ impl AssetsAdapter for AssetsLoaderFromDisk {
         self.store.get(asset)
     }
 
-    fn get_resized_image(&self, asset: &str, size: (u32, u32)) -> Result<Asset, ()> {
+    fn get_resized_image(&self, asset: &str, size: ImageSize) -> Result<Asset, ()> {
+        if size.width.is_none() && size.height.is_none() {
+            return Err(());
+        }
+
         let asset_type = self.store.asset_type(asset)?;
         if !matches!(asset_type, AssetType::Image) {
             return Err(());

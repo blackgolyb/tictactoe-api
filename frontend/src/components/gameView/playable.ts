@@ -150,14 +150,9 @@ export class PlayableGameView extends HTMLElement {
     const unsubServerUrl = store.onChange("serverUrl", () => this.render());
     const unsubWidth = store.onChange("width", () => this.render());
     const unsubHeight = store.onChange("height", () => this.render());
-    const unsubImageWidth = store.onChange("imageWidth", () => this.render());
-    const unsubImageHeight = store.onChange("imageHeight", () => this.render());
-    const unsubCurrentPlayerImageWidth = store.onChange(
-      "currentPlayerImageWidth",
-      () => this.render(),
-    );
-    const unsubCurrentPlayerImageHeight = store.onChange(
-      "currentPlayerImageHeight",
+    const unsubImageSize = store.onChange("imageSize", () => this.render());
+    const unsubCurrentPlayerImageSize = store.onChange(
+      "currentPlayerImageSize",
       () => this.render(),
     );
 
@@ -166,10 +161,8 @@ export class PlayableGameView extends HTMLElement {
       unsubServerUrl,
       unsubWidth,
       unsubHeight,
-      unsubImageWidth,
-      unsubImageHeight,
-      unsubCurrentPlayerImageWidth,
-      unsubCurrentPlayerImageHeight,
+      unsubImageSize,
+      unsubCurrentPlayerImageSize,
     );
   }
 
@@ -205,8 +198,8 @@ export class PlayableGameView extends HTMLElement {
     const currentPlayerUrl = gameApi.withTimestamp(
       gameApi.getCurrentPlayerUrl(gameName, imageSize),
     );
-    const imageStyle = imageSize
-      ? ` style="width: ${imageSize.width}px; height: ${imageSize.height}px;"`
+    const imageStyle = imageSize?.height
+      ? ` style="height: ${imageSize.height}px;"`
       : "";
 
     this.currentPlayerIndicator.innerHTML = `
@@ -221,8 +214,8 @@ export class PlayableGameView extends HTMLElement {
     height: number,
     imageSize?: ImageSize,
   ): Promise<void> {
-    const fieldWidth = imageSize?.width || 100;
-    this.gameBoard.style.gridTemplateColumns = `repeat(${width}, ${fieldWidth}px)`;
+    const fieldSize = imageSize?.height || 100;
+    this.gameBoard.style.gridTemplateColumns = `repeat(${width}, ${fieldSize}px)`;
     this.gameBoard.innerHTML = "";
 
     for (let y = 0; y < height; y++) {
@@ -242,8 +235,8 @@ export class PlayableGameView extends HTMLElement {
     field.className = "field";
     field.setAttribute("data-x", point[0].toString());
     field.setAttribute("data-y", point[1].toString());
-    if (imageSize) {
-      field.style.width = `${imageSize.width}px`;
+    if (imageSize?.height) {
+      field.style.width = `${imageSize.height}px`;
       field.style.height = `${imageSize.height}px`;
     }
 

@@ -7,8 +7,8 @@ export type Player = "X" | "O";
 export type Point = [number, number];
 
 export interface ImageSize {
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
 }
 
 export interface GameRules {
@@ -280,8 +280,12 @@ export class GameApiService {
     }
 
     const urlObj = new URL(url);
-    urlObj.searchParams.set("w", size.width.toString());
-    urlObj.searchParams.set("h", size.height.toString());
+    if (size.width) {
+      urlObj.searchParams.set("w", size.width.toString());
+    }
+    if (size.height) {
+      urlObj.searchParams.set("h", size.height.toString());
+    }
     return urlObj.toString();
   }
 

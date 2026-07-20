@@ -10,10 +10,8 @@ export class GameSelector extends HTMLElement {
   private serverUrlInput: HTMLInputElement;
   private gameNameInput: HTMLInputElement;
   private redirectUrlInput: HTMLInputElement;
-  private imageWidthInput: HTMLInputElement;
-  private imageHeightInput: HTMLInputElement;
-  private currentPlayerImageWidthInput: HTMLInputElement;
-  private currentPlayerImageHeightInput: HTMLInputElement;
+  private imageSizeInput: HTMLInputElement;
+  private currentPlayerImageSizeInput: HTMLInputElement;
   private unsubscribers: Array<() => void> = [];
 
   constructor() {
@@ -183,75 +181,40 @@ export class GameSelector extends HTMLElement {
     gameNameGroup.appendChild(gameNameLabel);
     gameNameGroup.appendChild(this.gameNameInput);
 
-    // Board image size fields
-    const imageWidthGroup = document.createElement("div");
-    imageWidthGroup.className = "field-group compact";
+    // Image size fields. The value is sent as image height; backend derives width.
+    const imageSizeGroup = document.createElement("div");
+    imageSizeGroup.className = "field-group compact";
 
-    const imageWidthLabel = document.createElement("label");
-    imageWidthLabel.textContent = "Board W";
-    imageWidthLabel.htmlFor = "imageWidth";
+    const imageSizeLabel = document.createElement("label");
+    imageSizeLabel.textContent = "Board Size";
+    imageSizeLabel.htmlFor = "imageSize";
 
-    this.imageWidthInput = document.createElement("input");
-    this.imageWidthInput.type = "number";
-    this.imageWidthInput.id = "imageWidth";
-    this.imageWidthInput.placeholder = "100";
-    this.imageWidthInput.min = "1";
-    this.imageWidthInput.max = "512";
+    this.imageSizeInput = document.createElement("input");
+    this.imageSizeInput.type = "number";
+    this.imageSizeInput.id = "imageSize";
+    this.imageSizeInput.placeholder = "100";
+    this.imageSizeInput.min = "1";
+    this.imageSizeInput.max = "512";
 
-    imageWidthGroup.appendChild(imageWidthLabel);
-    imageWidthGroup.appendChild(this.imageWidthInput);
+    imageSizeGroup.appendChild(imageSizeLabel);
+    imageSizeGroup.appendChild(this.imageSizeInput);
 
-    const imageHeightGroup = document.createElement("div");
-    imageHeightGroup.className = "field-group compact";
+    const currentPlayerImageSizeGroup = document.createElement("div");
+    currentPlayerImageSizeGroup.className = "field-group compact";
 
-    const imageHeightLabel = document.createElement("label");
-    imageHeightLabel.textContent = "Board H";
-    imageHeightLabel.htmlFor = "imageHeight";
+    const currentPlayerImageSizeLabel = document.createElement("label");
+    currentPlayerImageSizeLabel.textContent = "Player Size";
+    currentPlayerImageSizeLabel.htmlFor = "currentPlayerImageSize";
 
-    this.imageHeightInput = document.createElement("input");
-    this.imageHeightInput.type = "number";
-    this.imageHeightInput.id = "imageHeight";
-    this.imageHeightInput.placeholder = "100";
-    this.imageHeightInput.min = "1";
-    this.imageHeightInput.max = "512";
+    this.currentPlayerImageSizeInput = document.createElement("input");
+    this.currentPlayerImageSizeInput.type = "number";
+    this.currentPlayerImageSizeInput.id = "currentPlayerImageSize";
+    this.currentPlayerImageSizeInput.placeholder = "24";
+    this.currentPlayerImageSizeInput.min = "1";
+    this.currentPlayerImageSizeInput.max = "512";
 
-    imageHeightGroup.appendChild(imageHeightLabel);
-    imageHeightGroup.appendChild(this.imageHeightInput);
-
-    // Current player image size fields
-    const currentPlayerImageWidthGroup = document.createElement("div");
-    currentPlayerImageWidthGroup.className = "field-group compact";
-
-    const currentPlayerImageWidthLabel = document.createElement("label");
-    currentPlayerImageWidthLabel.textContent = "Player W";
-    currentPlayerImageWidthLabel.htmlFor = "currentPlayerImageWidth";
-
-    this.currentPlayerImageWidthInput = document.createElement("input");
-    this.currentPlayerImageWidthInput.type = "number";
-    this.currentPlayerImageWidthInput.id = "currentPlayerImageWidth";
-    this.currentPlayerImageWidthInput.placeholder = "24";
-    this.currentPlayerImageWidthInput.min = "1";
-    this.currentPlayerImageWidthInput.max = "512";
-
-    currentPlayerImageWidthGroup.appendChild(currentPlayerImageWidthLabel);
-    currentPlayerImageWidthGroup.appendChild(this.currentPlayerImageWidthInput);
-
-    const currentPlayerImageHeightGroup = document.createElement("div");
-    currentPlayerImageHeightGroup.className = "field-group compact";
-
-    const currentPlayerImageHeightLabel = document.createElement("label");
-    currentPlayerImageHeightLabel.textContent = "Player H";
-    currentPlayerImageHeightLabel.htmlFor = "currentPlayerImageHeight";
-
-    this.currentPlayerImageHeightInput = document.createElement("input");
-    this.currentPlayerImageHeightInput.type = "number";
-    this.currentPlayerImageHeightInput.id = "currentPlayerImageHeight";
-    this.currentPlayerImageHeightInput.placeholder = "24";
-    this.currentPlayerImageHeightInput.min = "1";
-    this.currentPlayerImageHeightInput.max = "512";
-
-    currentPlayerImageHeightGroup.appendChild(currentPlayerImageHeightLabel);
-    currentPlayerImageHeightGroup.appendChild(this.currentPlayerImageHeightInput);
+    currentPlayerImageSizeGroup.appendChild(currentPlayerImageSizeLabel);
+    currentPlayerImageSizeGroup.appendChild(this.currentPlayerImageSizeInput);
 
     // Button group
     const buttonGroup = document.createElement("div");
@@ -273,10 +236,8 @@ export class GameSelector extends HTMLElement {
     container.appendChild(redirectUrlGroup);
     container.appendChild(serverUrlGroup);
     container.appendChild(gameNameGroup);
-    container.appendChild(imageWidthGroup);
-    container.appendChild(imageHeightGroup);
-    container.appendChild(currentPlayerImageWidthGroup);
-    container.appendChild(currentPlayerImageHeightGroup);
+    container.appendChild(imageSizeGroup);
+    container.appendChild(currentPlayerImageSizeGroup);
     container.appendChild(buttonGroup);
 
     this.shadowRoot!.appendChild(style);
@@ -304,28 +265,14 @@ export class GameSelector extends HTMLElement {
       }
     });
 
-    this.imageWidthInput.addEventListener("keypress", (e) => {
+    this.imageSizeInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         this.handleSelect();
       }
     });
 
-    this.imageHeightInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        this.handleSelect();
-      }
-    });
-
-    this.currentPlayerImageWidthInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        this.handleSelect();
-      }
-    });
-
-    this.currentPlayerImageHeightInput.addEventListener("keypress", (e) => {
+    this.currentPlayerImageSizeInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         this.handleSelect();
@@ -363,48 +310,26 @@ export class GameSelector extends HTMLElement {
       }
     });
 
-    const unsubImageWidth = store.onChange("imageWidth", (value) => {
+    const unsubImageSize = store.onChange("imageSize", (value) => {
       const nextValue = value ? value.toString() : "";
-      if (this.imageWidthInput.value !== nextValue) {
-        this.imageWidthInput.value = nextValue;
+      if (this.imageSizeInput.value !== nextValue) {
+        this.imageSizeInput.value = nextValue;
       }
     });
 
-    const unsubImageHeight = store.onChange("imageHeight", (value) => {
+    const unsubCurrentPlayerImageSize = store.onChange("currentPlayerImageSize", (value) => {
       const nextValue = value ? value.toString() : "";
-      if (this.imageHeightInput.value !== nextValue) {
-        this.imageHeightInput.value = nextValue;
+      if (this.currentPlayerImageSizeInput.value !== nextValue) {
+        this.currentPlayerImageSizeInput.value = nextValue;
       }
     });
-
-    const unsubCurrentPlayerImageWidth = store.onChange(
-      "currentPlayerImageWidth",
-      (value) => {
-        const nextValue = value ? value.toString() : "";
-        if (this.currentPlayerImageWidthInput.value !== nextValue) {
-          this.currentPlayerImageWidthInput.value = nextValue;
-        }
-      },
-    );
-
-    const unsubCurrentPlayerImageHeight = store.onChange(
-      "currentPlayerImageHeight",
-      (value) => {
-        const nextValue = value ? value.toString() : "";
-        if (this.currentPlayerImageHeightInput.value !== nextValue) {
-          this.currentPlayerImageHeightInput.value = nextValue;
-        }
-      },
-    );
 
     this.unsubscribers.push(
       unsubRedirectUrl,
       unsubServerUrl,
       unsubGameName,
-      unsubImageWidth,
-      unsubImageHeight,
-      unsubCurrentPlayerImageWidth,
-      unsubCurrentPlayerImageHeight,
+      unsubImageSize,
+      unsubCurrentPlayerImageSize,
     );
   }
 
@@ -412,10 +337,8 @@ export class GameSelector extends HTMLElement {
     const redirectUrl = store.get<string>("redirectUrl");
     const serverUrl = store.get<string>("serverUrl");
     const gameName = store.get<string>("gameName");
-    const imageWidth = store.get<number>("imageWidth");
-    const imageHeight = store.get<number>("imageHeight");
-    const currentPlayerImageWidth = store.get<number>("currentPlayerImageWidth");
-    const currentPlayerImageHeight = store.get<number>("currentPlayerImageHeight");
+    const imageSize = store.get<number>("imageSize");
+    const currentPlayerImageSize = store.get<number>("currentPlayerImageSize");
 
     if (redirectUrl) {
       this.redirectUrlInput.value = redirectUrl;
@@ -435,13 +358,9 @@ export class GameSelector extends HTMLElement {
       this.gameNameInput.value = "default";
     }
 
-    this.imageWidthInput.value = imageWidth ? imageWidth.toString() : "";
-    this.imageHeightInput.value = imageHeight ? imageHeight.toString() : "";
-    this.currentPlayerImageWidthInput.value = currentPlayerImageWidth
-      ? currentPlayerImageWidth.toString()
-      : "";
-    this.currentPlayerImageHeightInput.value = currentPlayerImageHeight
-      ? currentPlayerImageHeight.toString()
+    this.imageSizeInput.value = imageSize ? imageSize.toString() : "";
+    this.currentPlayerImageSizeInput.value = currentPlayerImageSize
+      ? currentPlayerImageSize.toString()
       : "";
   }
 
@@ -450,68 +369,33 @@ export class GameSelector extends HTMLElement {
       !this.redirectUrlInput.checkValidity() ||
       !this.serverUrlInput.checkValidity() ||
       !this.gameNameInput.checkValidity() ||
-      !this.imageWidthInput.checkValidity() ||
-      !this.imageHeightInput.checkValidity() ||
-      !this.currentPlayerImageWidthInput.checkValidity() ||
-      !this.currentPlayerImageHeightInput.checkValidity()
+      !this.imageSizeInput.checkValidity() ||
+      !this.currentPlayerImageSizeInput.checkValidity()
     ) {
       this.redirectUrlInput.reportValidity();
       this.serverUrlInput.reportValidity();
       this.gameNameInput.reportValidity();
-      this.imageWidthInput.reportValidity();
-      this.imageHeightInput.reportValidity();
-      this.currentPlayerImageWidthInput.reportValidity();
-      this.currentPlayerImageHeightInput.reportValidity();
-      return;
-    }
-
-    if (!this.hasValidImageSize(this.imageWidthInput, this.imageHeightInput)) {
-      this.imageWidthInput.setCustomValidity(
-        "Set both board image width and height, or clear both.",
-      );
-      this.imageWidthInput.reportValidity();
-      this.imageWidthInput.setCustomValidity("");
-      return;
-    }
-
-    if (
-      !this.hasValidImageSize(
-        this.currentPlayerImageWidthInput,
-        this.currentPlayerImageHeightInput,
-      )
-    ) {
-      this.currentPlayerImageWidthInput.setCustomValidity(
-        "Set both current-player image width and height, or clear both.",
-      );
-      this.currentPlayerImageWidthInput.reportValidity();
-      this.currentPlayerImageWidthInput.setCustomValidity("");
+      this.imageSizeInput.reportValidity();
+      this.currentPlayerImageSizeInput.reportValidity();
       return;
     }
 
     const redirectUrl = this.redirectUrlInput.value;
     const serverUrl = this.serverUrlInput.value;
     const gameName = this.gameNameInput.value;
-    const imageWidth = this.imageWidthInput.value
-      ? parseInt(this.imageWidthInput.value)
+    const imageSize = this.imageSizeInput.value
+      ? parseInt(this.imageSizeInput.value)
       : undefined;
-    const imageHeight = this.imageHeightInput.value
-      ? parseInt(this.imageHeightInput.value)
-      : undefined;
-    const currentPlayerImageWidth = this.currentPlayerImageWidthInput.value
-      ? parseInt(this.currentPlayerImageWidthInput.value)
-      : undefined;
-    const currentPlayerImageHeight = this.currentPlayerImageHeightInput.value
-      ? parseInt(this.currentPlayerImageHeightInput.value)
+    const currentPlayerImageSize = this.currentPlayerImageSizeInput.value
+      ? parseInt(this.currentPlayerImageSizeInput.value)
       : undefined;
 
     // Update store directly - this will trigger effects in main.ts
     store.set("redirectUrl", redirectUrl);
     store.set("serverUrl", serverUrl);
     store.set("gameName", gameName);
-    store.set("imageWidth", imageWidth);
-    store.set("imageHeight", imageHeight);
-    store.set("currentPlayerImageWidth", currentPlayerImageWidth);
-    store.set("currentPlayerImageHeight", currentPlayerImageHeight);
+    store.set("imageSize", imageSize);
+    store.set("currentPlayerImageSize", currentPlayerImageSize);
 
     // Update game API base URL
     gameApi.setBaseUrl(serverUrl);
@@ -523,10 +407,8 @@ export class GameSelector extends HTMLElement {
           redirectUrl: redirectUrl,
           serverURL: serverUrl,
           gameName: gameName,
-          imageWidth: imageWidth,
-          imageHeight: imageHeight,
-          currentPlayerImageWidth: currentPlayerImageWidth,
-          currentPlayerImageHeight: currentPlayerImageHeight,
+          imageSize: imageSize,
+          currentPlayerImageSize: currentPlayerImageSize,
         },
         bubbles: true,
         composed: true,
@@ -543,15 +425,6 @@ export class GameSelector extends HTMLElement {
     );
   }
 
-  private hasValidImageSize(
-    widthInput: HTMLInputElement,
-    heightInput: HTMLInputElement,
-  ): boolean {
-    const hasWidth = widthInput.value !== "";
-    const hasHeight = heightInput.value !== "";
-
-    return hasWidth === hasHeight;
-  }
 }
 
 customElements.define("game-selector", GameSelector);

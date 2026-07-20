@@ -4,37 +4,26 @@ import Storage from "../shared/storage";
 export const store = new Storage({
   serverUrl: BASE_URL,
   gameName: DEFAULT_PARAMS.name,
-  imageWidth: 100,
-  imageHeight: 100,
-  currentPlayerImageWidth: 24,
-  currentPlayerImageHeight: 24,
+  imageSize: 100,
+  currentPlayerImageSize: 24,
 });
 
 export function getFieldImageSize():
-  | { width: number; height: number }
+  | { width?: number; height?: number }
   | undefined {
-  const width = store.get<number>("imageWidth");
-  const height = store.get<number>("imageHeight");
-
-  return getImageSize(width, height);
+  return getImageHeight(store.get<number>("imageSize"));
 }
 
 export function getCurrentPlayerImageSize():
-  | { width: number; height: number }
+  | { width?: number; height?: number }
   | undefined {
-  const width = store.get<number>("currentPlayerImageWidth");
-  const height = store.get<number>("currentPlayerImageHeight");
-
-  return getImageSize(width, height);
+  return getImageHeight(store.get<number>("currentPlayerImageSize"));
 }
 
-function getImageSize(
-  width: number | undefined,
-  height: number | undefined,
-): { width: number; height: number } | undefined {
-  if (!width || !height) {
+function getImageHeight(size: number | undefined): { height: number } | undefined {
+  if (!size) {
     return undefined;
   }
 
-  return { width, height };
+  return { height: size };
 }

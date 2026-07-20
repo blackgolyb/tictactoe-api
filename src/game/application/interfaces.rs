@@ -9,7 +9,13 @@ pub enum Asset {
     Image(Vec<u8>),
 }
 
+#[derive(Clone, Copy)]
+pub struct ImageSize {
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
 pub trait AssetsAdapter {
     fn get(&self, asset: &str) -> Result<Asset, ()>;
-    fn get_resized_image(&self, asset: &str, size: (u32, u32)) -> Result<Asset, ()>;
+    fn get_resized_image(&self, asset: &str, size: ImageSize) -> Result<Asset, ()>;
 }
