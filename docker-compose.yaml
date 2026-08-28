@@ -14,7 +14,7 @@ services:
     networks:
       - tailnet
     volumes:
-      - app-data:/app/store
+      - ./store:/app/store
 
   tailscale:
     container_name: tic-tac-toe-ts-proxy
@@ -36,6 +36,8 @@ services:
     volumes:
       - tailscale-state:/var/lib/tailscale
       - ./tailscale/serve.json:/etc/tailscale/serve.json:ro
+      - ./scripts/tailscale-entrypoint.sh:/tailscale-entrypoint.sh:ro
+    command: ["sh", "/tailscale-entrypoint.sh"]
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -45,5 +47,4 @@ networks:
     driver: bridge
 
 volumes:
-  app-data:
   tailscale-state:
