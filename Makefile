@@ -36,14 +36,26 @@ run: build
 	set +o allexport &&\
 	$(BUILD_FOLDER)/$(TARGET_FILE)
 
-serveo:
-	docker compose -f docker-compose-serveo.yaml up -d
+docker_run:
+	docker compose -f docker-compose.yaml --profile tailscale up -d
 
-serveo_down:
-	docker compose -f docker-compose-serveo.yaml down
+docker_down:
+	docker compose -f docker-compose.yaml --profile tailscale down --remove-orphans
 
-serveo_build:
-	docker compose -f docker-compose-serveo.yaml build
+docker_local_run:
+	docker compose -f docker-compose.yaml -f docker-compose.local.yaml up -d app
+
+docker_local_down:
+	docker compose -f docker-compose.yaml -f docker-compose.local.yaml down --remove-orphans
+
+docker_build:
+	docker compose -f docker-compose.yaml build
+
+docker_build_x86:
+	sh ./scripts/docker.sh x86
+
+docker_build_arm:
+	sh ./scripts/docker.sh arm
 
 all: run
 

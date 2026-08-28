@@ -4,16 +4,46 @@ services:
     container_name: tic-tac-toe-api
     image: blackgolyb/tic-tac-toe-api:latest
     restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.x86
     env_file:
       - env/.env.deploy
-    ports:
-      - "8085:8080"
+    expose:
+      - "8080"
     networks:
-      - custom
+      - tailnet
     volumes:
       - app-data:/app/store
+
+  tailscale:
+    container_name: tic-tac-toe-ts-proxy
+    image: tailscale/tailscale:latest
+    hostname: tic-tac-toe
+    restart: always
+    profiles:
+      - tailscale
+    depends_on:
+      - app
+    networks:
+      - tailnet
+    env_file:
+      - env/.env.deploy
+    environment:
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/etc/tailscale/serve.json
+      - TS_EXTRA_ARGS=--reset
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./tailscale/serve.json:/etc/tailscale/serve.json:ro
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+
 networks:
-  custom:
+  tailnet:
     driver: bridge
+
 volumes:
   app-data:
+  tailscale-state:
